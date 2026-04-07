@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { AuthButton } from "@/components/AuthButton"
 
 export function Navbar() {
   return (
@@ -9,12 +10,13 @@ export function Navbar() {
             <span className="text-orange-500">Easy</span><span className="text-gray-900">SaaS</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link
-              href="/ideas"
-              className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
-            >
+            <Link href="/ideas" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
               Browse Ideas
             </Link>
+            <Link href="/pricing" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+              Pricing
+            </Link>
+            <AuthButton />
           </div>
         </div>
       </div>
