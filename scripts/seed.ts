@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk"
-import { GoogleGenerativeAI } from "@google/generative-ai"
 import { createClient } from "@supabase/supabase-js"
 import * as dotenv from "dotenv"
 
@@ -14,15 +13,8 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1)
 }
 
-const googleApiKey = process.env.GOOGLE_API_KEY
-if (!googleApiKey) {
-  console.error("Missing GOOGLE_API_KEY in .env.local")
-  process.exit(1)
-}
-
 const supabase = createClient(supabaseUrl, supabaseKey)
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-const genAI = new GoogleGenerativeAI(googleApiKey)
 
 const CATEGORIES = [
   "fintech", "devtools", "automation", "ai-ml", "ecommerce", "health",
@@ -171,13 +163,7 @@ ${chunk.map((p, idx) => `--- Post ${idx + 1} ---\n${p}`).join("\n\n")}`
   return { ideas: allIdeas, sourceTexts: allSourceTexts }
 }
 
-// --- Embedding & Dedup ---
-
-async function getEmbedding(text: string): Promise<number[]> {
-  const model = genAI.getGenerativeModel({ model: "text-embedding-004" })
-  const result = await model.embedContent(text)
-  return result.embedding.values
-}
+// --- Dedup & Insert ---
 
 function slugify(text: string): string {
   return text
@@ -192,55 +178,36 @@ async function deduplicateAndInsert(
   sourcePlatform: string,
   sourceText: string
 ): Promise<boolean> {
-  let embedding: number[]
-  try {
-    embedding = await getEmbedding(`${idea.idea_title} ${idea.summary}`)
-  } catch (e) {
-    console.warn(`  ⚠ Embedding failed for "${idea.idea_title}", inserting without dedup`)
-    // Insert without embedding
-    const slug = `${slugify(idea.idea_title)}-${Date.now().toString(36)}`
-    await supabase.from("ideas").insert({
-      slug,
-      title: idea.idea_title,
-      summary: idea.summary,
-      category: CATEGORIES.includes(idea.category) ? idea.category : "other",
-      tags: idea.tags,
-      mention_count: 1,
-      first_seen_at: new Date().toISOString(),
-      last_seen_at: new Date().toISOString(),
-      status: "needs_review",
-    })
-    return true
-  }
-
-  // Check for duplicates
-  const { data: matches } = await supabase.rpc("match_idea_embeddings", {
-    query_embedding: JSON.stringify(embedding),
-    match_threshold: 0.85,
+  // Check for duplicates using trigram similarity
+  const { data: matches } = await supabase.rpc("find_similar_ideas", {
+    search_title: idea.idea_title,
+    search_summary: idea.summary,
+    match_threshold: 0.6,
     match_count: 1,
   })
 
-  if (matches && matches.length > 0) {
-    const existingId = matches[0].idea_id
+  if (matches && matches.length > 0 && matches[0].title_similarity > 0.6) {
+    // Duplicate found — increment mention count
+    const existing = matches[0]
     await supabase
       .from("ideas")
       .update({
-        mention_count: matches[0].mention_count + 1,
+        mention_count: existing.mention_count + 1,
         last_seen_at: new Date().toISOString(),
       })
-      .eq("id", existingId)
+      .eq("id", existing.idea_id)
 
     await supabase.from("idea_sources").insert({
-      idea_id: existingId,
+      idea_id: existing.idea_id,
       source_platform: sourcePlatform,
       raw_text: sourceText.slice(0, 2000),
     })
 
-    console.log(`  ↑ Duplicate: "${idea.idea_title}" (now ${matches[0].mention_count + 1} mentions)`)
+    console.log(`  ↑ Duplicate: "${idea.idea_title}" ≈ "${existing.idea_title}" (${(existing.title_similarity * 100).toFixed(0)}% similar, now ${existing.mention_count + 1} mentions)`)
     return false
   }
 
-  // New idea
+  // New idea — insert
   const slug = `${slugify(idea.idea_title)}-${Date.now().toString(36)}`
   const status = idea.confidence >= 0.7 ? "active" : "needs_review"
 
@@ -264,12 +231,6 @@ async function deduplicateAndInsert(
     console.warn(`  ✗ Failed to insert "${idea.idea_title}":`, error.message)
     return false
   }
-
-  // Insert embedding
-  await supabase.from("idea_embeddings").insert({
-    idea_id: newIdea.id,
-    embedding: JSON.stringify(embedding),
-  })
 
   // Insert source
   await supabase.from("idea_sources").insert({

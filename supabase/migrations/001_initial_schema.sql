@@ -1,5 +1,5 @@
--- Enable pgvector
-CREATE EXTENSION IF NOT EXISTS vector;
+-- Enable extensions
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Ideas table
 CREATE TABLE ideas (
@@ -23,6 +23,8 @@ CREATE INDEX idx_ideas_category ON ideas (category);
 CREATE INDEX idx_ideas_mention_count ON ideas (mention_count DESC);
 CREATE INDEX idx_ideas_first_seen_at ON ideas (first_seen_at DESC);
 CREATE INDEX idx_ideas_search ON ideas USING gin (search_vector);
+CREATE INDEX idx_ideas_title_trgm ON ideas USING gin (title gin_trgm_ops);
+CREATE INDEX idx_ideas_summary_trgm ON ideas USING gin (summary gin_trgm_ops);
 
 -- updated_at trigger
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -63,32 +65,27 @@ CREATE TABLE idea_sources (
 CREATE INDEX idx_idea_sources_idea_id ON idea_sources (idea_id);
 CREATE INDEX idx_idea_sources_platform ON idea_sources (source_platform);
 
--- Idea embeddings (for deduplication)
-CREATE TABLE idea_embeddings (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  idea_id uuid UNIQUE NOT NULL REFERENCES ideas(id) ON DELETE CASCADE,
-  embedding vector(768)
-);
-
 -- RLS
 ALTER TABLE ideas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE idea_sources ENABLE ROW LEVEL SECURITY;
-ALTER TABLE idea_embeddings ENABLE ROW LEVEL SECURITY;
 
 -- ideas: public read
 CREATE POLICY "ideas_public_read" ON ideas
   FOR SELECT USING (true);
 
--- Cosine similarity match function for deduplication
-CREATE OR REPLACE FUNCTION match_idea_embeddings(
-  query_embedding vector(768),
-  match_threshold float DEFAULT 0.85,
+-- Function to find similar ideas using trigram similarity
+CREATE OR REPLACE FUNCTION find_similar_ideas(
+  search_title text,
+  search_summary text,
+  match_threshold float DEFAULT 0.6,
   match_count int DEFAULT 1
 )
 RETURNS TABLE (
   idea_id uuid,
+  idea_title text,
   mention_count int,
-  similarity float
+  title_similarity float,
+  summary_similarity float
 )
 LANGUAGE plpgsql
 STABLE
@@ -96,13 +93,15 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT
-    ie.idea_id,
+    i.id AS idea_id,
+    i.title AS idea_title,
     i.mention_count,
-    1 - (ie.embedding <=> query_embedding) AS similarity
-  FROM idea_embeddings ie
-  JOIN ideas i ON i.id = ie.idea_id
-  WHERE 1 - (ie.embedding <=> query_embedding) > match_threshold
-  ORDER BY ie.embedding <=> query_embedding
+    similarity(i.title, search_title)::float AS title_similarity,
+    similarity(i.summary, search_summary)::float AS summary_similarity
+  FROM ideas i
+  WHERE similarity(i.title, search_title) > match_threshold
+     OR similarity(i.summary, search_summary) > (match_threshold - 0.1)
+  ORDER BY similarity(i.title, search_title) DESC
   LIMIT match_count;
 END;
 $$;
