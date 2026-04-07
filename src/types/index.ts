@@ -39,3 +39,18 @@ export interface IdeaFilters {
   cursor?: string
   difficulty?: "easy" | "medium" | "hard"
 }
+
+export interface AppUser {
+  id: string
+  email: string
+  subscription_status: "free" | "pro"
+  stripe_customer_id: string | null
+}
+
+export interface IdeaPackage {
+  fill_data: Record<string, any>
+  tech_spec: string
+  brand_kit: string
+  launch_checklist: string
+  generated_at: string
+}
