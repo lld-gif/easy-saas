@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 import * as dotenv from "dotenv"
 
 // Load .env.local
-dotenv.config({ path: ".env.local" })
+dotenv.config({ path: ".env.local", override: true })
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -21,7 +21,7 @@ if (!googleApiKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey)
-const anthropic = new Anthropic()
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 const genAI = new GoogleGenerativeAI(googleApiKey)
 
 const CATEGORIES = [
