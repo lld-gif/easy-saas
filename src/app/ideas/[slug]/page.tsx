@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CategoryBadge } from "@/components/CategoryBadge"
 import { MentionBadge } from "@/components/MentionBadge"
@@ -54,13 +53,10 @@ export default async function IdeaDetailPage({ params }: Props) {
       <div className="flex flex-wrap items-center gap-3 mb-8">
         <CategoryBadge category={idea.category} />
         {idea.tags.map((tag) => (
-          <Badge key={tag} variant="outline" className="text-xs">
+          <span key={tag} className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
             {tag}
-          </Badge>
+          </span>
         ))}
-        <span className="text-sm text-muted-foreground">
-          First spotted {formatDate(idea.first_seen_at)}
-        </span>
       </div>
 
       <div className="prose prose-gray max-w-none mb-8">

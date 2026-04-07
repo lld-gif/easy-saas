@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { CategoryBadge } from "@/components/CategoryBadge"
 import { MentionBadge } from "@/components/MentionBadge"
-import { formatDate } from "@/lib/utils"
 import type { Idea } from "@/types"
 
 interface IdeaListRowProps {
@@ -26,11 +25,13 @@ export function IdeaListRow({ idea, rank }: IdeaListRowProps) {
         <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">
           {idea.summary}
         </p>
-        <div className="flex items-center gap-2 mt-1.5">
+        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
           <CategoryBadge category={idea.category} />
-          <span className="text-xs text-gray-400">
-            {formatDate(idea.first_seen_at)}
-          </span>
+          {idea.tags.slice(0, 3).map((tag) => (
+            <span key={tag} className="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">
+              {tag}
+            </span>
+          ))}
         </div>
       </div>
 

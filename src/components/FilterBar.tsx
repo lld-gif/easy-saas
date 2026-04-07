@@ -7,21 +7,7 @@ import { cn } from "@/lib/utils"
 const SORT_OPTIONS = [
   { value: "trending", label: "Trending" },
   { value: "newest", label: "Newest" },
-  { value: "recent", label: "Recently active" },
-]
-
-const POPULARITY_OPTIONS = [
-  { value: "all", label: "All" },
-  { value: "trending", label: "🔥 Trending" },
-  { value: "rising", label: "📈 Rising" },
-  { value: "new", label: "🆕 New" },
-]
-
-const TIME_OPTIONS = [
-  { value: "all", label: "All time" },
-  { value: "week", label: "This week" },
-  { value: "month", label: "This month" },
-  { value: "3months", label: "3 months" },
+  { value: "recent", label: "Recently spotted" },
 ]
 
 export function FilterBar() {
@@ -29,13 +15,11 @@ export function FilterBar() {
   const searchParams = useSearchParams()
 
   const activeCategory = searchParams.get("category") ?? ""
-  const activePopularity = searchParams.get("popularity") ?? "all"
-  const activeTime = searchParams.get("time") ?? "all"
   const activeSort = searchParams.get("sort") ?? "trending"
 
   const setFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString())
-    if (value === "all" || value === "") {
+    if (value === "" || value === "all") {
       params.delete(key)
     } else {
       params.set(key, value)
@@ -45,13 +29,16 @@ export function FilterBar() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Category pills */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         <button
           onClick={() => setFilter("category", "")}
           className={cn(
-            "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors",
-            !activeCategory ? "bg-gray-900 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+            "inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all",
+            !activeCategory
+              ? "bg-gray-900 text-white shadow-sm"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           )}
         >
           All
@@ -59,10 +46,12 @@ export function FilterBar() {
         {CATEGORIES.filter((c) => c.slug !== "other").map((cat) => (
           <button
             key={cat.slug}
-            onClick={() => setFilter("category", cat.slug)}
+            onClick={() => setFilter("category", activeCategory === cat.slug ? "" : cat.slug)}
             className={cn(
-              "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors",
-              activeCategory === cat.slug ? "bg-gray-900 text-white" : `${cat.color} hover:opacity-80`
+              "inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all",
+              activeCategory === cat.slug
+                ? "bg-gray-900 text-white shadow-sm"
+                : cn(cat.color, "hover:opacity-80")
             )}
           >
             {cat.label}
@@ -70,43 +59,23 @@ export function FilterBar() {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-4 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">Sort:</span>
-          <select
-            value={activeSort}
-            onChange={(e) => setFilter("sort", e.target.value)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-sm text-gray-900"
+      {/* Sort — inline pills instead of dropdown */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-400 mr-1">Sort:</span>
+        {SORT_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setFilter("sort", opt.value)}
+            className={cn(
+              "text-xs px-2.5 py-1 rounded-full transition-all",
+              activeSort === opt.value
+                ? "bg-gray-900 text-white"
+                : "text-gray-500 hover:bg-gray-100"
+            )}
           >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">Popularity:</span>
-          <select
-            value={activePopularity}
-            onChange={(e) => setFilter("popularity", e.target.value)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-sm text-gray-900"
-          >
-            {POPULARITY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">Time:</span>
-          <select
-            value={activeTime}
-            onChange={(e) => setFilter("time", e.target.value)}
-            className="bg-white border border-gray-200 rounded px-2 py-1 text-sm text-gray-900"
-          >
-            {TIME_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
+            {opt.label}
+          </button>
+        ))}
       </div>
     </div>
   )

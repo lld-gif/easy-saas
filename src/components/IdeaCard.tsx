@@ -2,7 +2,6 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CategoryBadge } from "@/components/CategoryBadge"
 import { MentionBadge } from "@/components/MentionBadge"
-import { formatDate } from "@/lib/utils"
 import type { Idea } from "@/types"
 
 interface IdeaCardProps {
@@ -25,11 +24,13 @@ export function IdeaCard({ idea }: IdeaCardProps) {
           <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
             {idea.summary}
           </p>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <CategoryBadge category={idea.category} />
-            <span className="text-xs text-muted-foreground">
-              {formatDate(idea.first_seen_at)}
-            </span>
+            {idea.tags.slice(0, 2).map((tag) => (
+              <span key={tag} className="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">
+                {tag}
+              </span>
+            ))}
           </div>
         </CardContent>
       </Card>
