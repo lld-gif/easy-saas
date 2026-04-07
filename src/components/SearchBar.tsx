@@ -32,7 +32,7 @@ export function SearchBar() {
       placeholder="Search SaaS ideas..."
       value={query}
       onChange={(e) => setQuery(e.target.value)}
-      className="max-w-sm"
+      className="max-w-sm focus-visible:ring-primary/30"
     />
   )
 }

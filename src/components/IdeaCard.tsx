@@ -12,10 +12,10 @@ interface IdeaCardProps {
 export function IdeaCard({ idea }: IdeaCardProps) {
   return (
     <Link href={`/ideas/${idea.slug}`}>
-      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
+      <Card className="h-full transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer border-border/60">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
-            <CardTitle className="text-base leading-snug line-clamp-2">
+            <CardTitle className="text-base font-medium leading-snug line-clamp-2">
               {idea.title}
             </CardTitle>
             <MentionBadge count={idea.mention_count} />

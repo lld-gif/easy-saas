@@ -12,7 +12,7 @@ export function IdeaListRow({ idea }: IdeaListRowProps) {
   return (
     <Link
       href={`/ideas/${idea.slug}`}
-      className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+      className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-all duration-200 border-l-2 border-transparent hover:border-primary"
     >
       <div className="flex-1 min-w-0">
         <h3 className="font-medium truncate">{idea.title}</h3>

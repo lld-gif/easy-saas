@@ -23,7 +23,7 @@ export function HeroSection({ ideaCount }: HeroSectionProps) {
   }
 
   return (
-    <section className="py-20 px-4 text-center">
+    <section className="py-24 px-4 text-center bg-gradient-to-b from-indigo-50/50 to-background">
       <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
         Discover your next SaaS idea
       </h1>
