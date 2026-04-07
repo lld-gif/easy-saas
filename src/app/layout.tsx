@@ -17,11 +17,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "EasySaaS — Discover Your Next SaaS Idea",
   description:
-    "We scan Twitter, Reddit, HN, and 5 more sources daily to find SaaS ideas you can build.",
+    "Browse validated SaaS ideas with real demand signals.",
   openGraph: {
     title: "EasySaaS — Discover Your Next SaaS Idea",
     description:
-      "We scan Twitter, Reddit, HN, and 5 more sources daily to find SaaS ideas you can build.",
+      "Browse validated SaaS ideas with real demand signals.",
     siteName: "EasySaaS",
   },
 }

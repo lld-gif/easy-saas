@@ -28,7 +28,7 @@ export function HeroSection({ ideaCount }: HeroSectionProps) {
         Discover your next SaaS idea
       </h1>
       <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-        We scan Twitter, Reddit, HN, and 5 more sources daily to find ideas you can build.
+        Browse validated SaaS ideas with real demand signals.
       </p>
       <form onSubmit={handleSearch} className="mt-8 flex max-w-lg mx-auto gap-2">
         <Input

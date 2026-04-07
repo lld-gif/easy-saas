@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { HeroSection } from "@/components/HeroSection"
-import { HowItWorks } from "@/components/HowItWorks"
 import { IdeaCard } from "@/components/IdeaCard"
 import { getTrendingIdeas, getIdeaCount } from "@/lib/queries"
 import { CATEGORIES } from "@/lib/categories"
@@ -50,8 +49,6 @@ export default async function Home() {
           </div>
         </section>
       )}
-
-      <HowItWorks />
     </main>
   )
 }
