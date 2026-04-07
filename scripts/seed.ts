@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk"
-import OpenAI from "openai"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 import { createClient } from "@supabase/supabase-js"
 import * as dotenv from "dotenv"
 
@@ -14,9 +14,15 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1)
 }
 
+const googleApiKey = process.env.GOOGLE_API_KEY
+if (!googleApiKey) {
+  console.error("Missing GOOGLE_API_KEY in .env.local")
+  process.exit(1)
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey)
 const anthropic = new Anthropic()
-const openai = new OpenAI()
+const genAI = new GoogleGenerativeAI(googleApiKey)
 
 const CATEGORIES = [
   "fintech", "devtools", "automation", "ai-ml", "ecommerce", "health",
@@ -168,11 +174,9 @@ ${chunk.map((p, idx) => `--- Post ${idx + 1} ---\n${p}`).join("\n\n")}`
 // --- Embedding & Dedup ---
 
 async function getEmbedding(text: string): Promise<number[]> {
-  const response = await openai.embeddings.create({
-    model: "text-embedding-3-small",
-    input: text,
-  })
-  return response.data[0].embedding
+  const model = genAI.getGenerativeModel({ model: "text-embedding-004" })
+  const result = await model.embedContent(text)
+  return result.embedding.values
 }
 
 function slugify(text: string): string {

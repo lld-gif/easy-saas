@@ -67,7 +67,7 @@ CREATE INDEX idx_idea_sources_platform ON idea_sources (source_platform);
 CREATE TABLE idea_embeddings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   idea_id uuid UNIQUE NOT NULL REFERENCES ideas(id) ON DELETE CASCADE,
-  embedding vector(1536)
+  embedding vector(768)
 );
 
 -- RLS
@@ -81,7 +81,7 @@ CREATE POLICY "ideas_public_read" ON ideas
 
 -- Cosine similarity match function for deduplication
 CREATE OR REPLACE FUNCTION match_idea_embeddings(
-  query_embedding vector(1536),
+  query_embedding vector(768),
   match_threshold float DEFAULT 0.85,
   match_count int DEFAULT 1
 )
