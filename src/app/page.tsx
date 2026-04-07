@@ -16,7 +16,7 @@ export default async function Home() {
 
       {/* Category chips */}
       <section className="py-8 px-4">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {CATEGORIES.filter((c) => c.slug !== "other").map((cat) => (
               <Link
@@ -34,10 +34,10 @@ export default async function Home() {
       {/* Trending ideas */}
       {trending.length > 0 && (
         <section className="py-8 px-4">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold">Trending Ideas</h2>
-              <Link href="/ideas" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/ideas" className="text-sm text-gray-400 hover:text-gray-900 transition-colors">
                 View all &rarr;
               </Link>
             </div>

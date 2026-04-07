@@ -51,7 +51,7 @@ export function FilterBar() {
           onClick={() => setFilter("category", "")}
           className={cn(
             "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors",
-            !activeCategory ? "bg-foreground text-background" : "bg-muted hover:bg-muted/80"
+            !activeCategory ? "bg-gray-900 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-600"
           )}
         >
           All
@@ -62,7 +62,7 @@ export function FilterBar() {
             onClick={() => setFilter("category", cat.slug)}
             className={cn(
               "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors",
-              activeCategory === cat.slug ? "bg-foreground text-background" : `${cat.color} hover:opacity-80`
+              activeCategory === cat.slug ? "bg-gray-900 text-white" : `${cat.color} hover:opacity-80`
             )}
           >
             {cat.label}
@@ -76,7 +76,7 @@ export function FilterBar() {
           <select
             value={activeSort}
             onChange={(e) => setFilter("sort", e.target.value)}
-            className="bg-card border border-border/50 rounded px-2 py-1 text-sm text-foreground"
+            className="bg-white border border-gray-200 rounded px-2 py-1 text-sm text-gray-900"
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -88,7 +88,7 @@ export function FilterBar() {
           <select
             value={activePopularity}
             onChange={(e) => setFilter("popularity", e.target.value)}
-            className="bg-card border border-border/50 rounded px-2 py-1 text-sm text-foreground"
+            className="bg-white border border-gray-200 rounded px-2 py-1 text-sm text-gray-900"
           >
             {POPULARITY_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -100,7 +100,7 @@ export function FilterBar() {
           <select
             value={activeTime}
             onChange={(e) => setFilter("time", e.target.value)}
-            className="bg-card border border-border/50 rounded px-2 py-1 text-sm text-foreground"
+            className="bg-white border border-gray-200 rounded px-2 py-1 text-sm text-gray-900"
           >
             {TIME_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>

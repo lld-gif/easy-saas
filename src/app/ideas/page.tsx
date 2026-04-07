@@ -23,7 +23,7 @@ export default async function IdeasPage({ searchParams }: Props) {
   const { ideas, nextCursor } = await getIdeas(filters)
 
   return (
-    <main className="max-w-7xl mx-auto px-4 py-8">
+    <main className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">Browse Ideas</h1>
         <div className="flex items-center gap-3">

@@ -63,11 +63,11 @@ export default async function IdeaDetailPage({ params }: Props) {
         </span>
       </div>
 
-      <div className="prose prose-invert max-w-none mb-8">
+      <div className="prose prose-gray max-w-none mb-8">
         <p className="text-lg leading-relaxed">{idea.summary}</p>
       </div>
 
-      <div className="rounded-lg border border-border/50 bg-card p-4 mb-8">
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 mb-8">
         <h2 className="font-semibold mb-2">Popularity</h2>
         <p className="text-sm text-muted-foreground">
           Spotted <span className="font-semibold text-foreground">{idea.mention_count}</span> time{idea.mention_count !== 1 ? "s" : ""} across
@@ -78,7 +78,7 @@ export default async function IdeaDetailPage({ params }: Props) {
         </p>
       </div>
 
-      <div className="rounded-lg border border-dashed border-border/50 p-6 text-center bg-card/50">
+      <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center bg-gray-50">
         <h3 className="font-semibold">Want the full spec?</h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Detailed technical spec, branding suggestions, and financial model — coming soon.

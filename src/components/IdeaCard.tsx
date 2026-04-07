@@ -12,7 +12,7 @@ interface IdeaCardProps {
 export function IdeaCard({ idea }: IdeaCardProps) {
   return (
     <Link href={`/ideas/${idea.slug}`}>
-      <Card className="h-full transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 cursor-pointer border-border/50">
+      <Card className="h-full transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer border-gray-200">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="text-base font-medium leading-snug line-clamp-2">
