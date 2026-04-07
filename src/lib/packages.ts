@@ -3,12 +3,16 @@ import path from "path"
 import Anthropic from "@anthropic-ai/sdk"
 import { createClient } from "@supabase/supabase-js"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+function getAnthropic() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+}
 
 function getDifficultyTier(d: number): "easy" | "medium" | "hard" {
   if (d <= 2) return "easy"
@@ -57,7 +61,7 @@ Return ONLY valid JSON.`
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       if (attempt > 0) await new Promise((r) => setTimeout(r, 2000))
-      const response = await anthropic.messages.create({
+      const response = await getAnthropic().messages.create({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 1024,
         messages: [{ role: "user", content: prompt }],
@@ -101,6 +105,7 @@ Return ONLY valid JSON.`
 }
 
 export async function checkRateLimit(userId: string): Promise<{ allowed: boolean; count: number }> {
+  const supabase = getServiceClient()
   const { count } = await supabase
     .from("generation_log")
     .select("*", { count: "exact", head: true })
