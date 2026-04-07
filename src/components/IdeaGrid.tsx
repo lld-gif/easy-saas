@@ -46,8 +46,8 @@ export function IdeaGrid({ ideas, view, hasFilters, hasCategory }: IdeaGridProps
   if (view === "list") {
     return (
       <div className="divide-y">
-        {ideas.map((idea) => (
-          <IdeaListRow key={idea.id} idea={idea} />
+        {ideas.map((idea, index) => (
+          <IdeaListRow key={idea.id} idea={idea} rank={index + 1} />
         ))}
       </div>
     )
