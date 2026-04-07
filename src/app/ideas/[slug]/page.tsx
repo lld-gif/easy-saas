@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Button } from "@/components/ui/button"
+import { Suspense } from "react"
 import { CategoryBadge } from "@/components/CategoryBadge"
 import { MentionBadge } from "@/components/MentionBadge"
+import { PackageSection } from "@/components/PackageSection"
 import { getIdeaBySlug } from "@/lib/queries"
 import { formatDate } from "@/lib/utils"
 
@@ -74,15 +75,9 @@ export default async function IdeaDetailPage({ params }: Props) {
         </p>
       </div>
 
-      <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center bg-gray-50">
-        <h3 className="font-semibold">Want the full spec?</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Detailed technical spec, branding suggestions, and financial model — coming soon.
-        </p>
-        <Button className="mt-4" disabled>
-          Coming Soon
-        </Button>
-      </div>
+      <Suspense fallback={null}>
+        <PackageSection ideaId={idea.id} />
+      </Suspense>
     </main>
   )
 }
