@@ -1,0 +1,35 @@
+"use client"
+
+import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { Input } from "@/components/ui/input"
+
+export function SearchBar() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [query, setQuery] = useState(searchParams.get("q") ?? "")
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (query.trim()) {
+        params.set("q", query.trim())
+      } else {
+        params.delete("q")
+      }
+      params.delete("cursor")
+      router.push(`/ideas?${params.toString()}`)
+    }, 300)
+
+    return () => clearTimeout(timeout)
+  }, [query]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <Input
+      placeholder="Search SaaS ideas..."
+      value={query}
+      onChange={(e) => setQuery(e.target.value)}
+      className="max-w-sm"
+    />
+  )
+}
