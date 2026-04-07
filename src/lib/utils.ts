@@ -38,7 +38,7 @@ export function parseSearchParams(params: Record<string, string | string[] | und
     popularity: validateEnum(params.popularity, VALID_POPULARITY, "all"),
     time: validateEnum(params.time, VALID_TIME, "all"),
     sort: validateEnum(params.sort, VALID_SORT, "trending"),
-    view: validateEnum(params.view, VALID_VIEW, "list"),
+    view: validateEnum(params.view, VALID_VIEW, "card"),
     cursor: typeof params.cursor === "string" ? params.cursor : undefined,
   }
 }

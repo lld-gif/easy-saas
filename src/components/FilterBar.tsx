@@ -69,7 +69,7 @@ export function FilterBar() {
             className={cn(
               "text-xs px-2.5 py-1 rounded-full transition-all",
               activeSort === opt.value
-                ? "bg-gray-900 text-white"
+                ? "bg-orange-500 text-white"
                 : "text-gray-500 hover:bg-gray-100"
             )}
           >

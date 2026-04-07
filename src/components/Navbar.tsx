@@ -5,8 +5,8 @@ export function Navbar() {
     <nav className="border-b border-gray-200 bg-white sticky top-0 z-50">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between">
-          <Link href="/" className="text-lg font-bold tracking-tight text-gray-900">
-            EasySaaS
+          <Link href="/" className="text-lg font-bold tracking-tight">
+            <span className="text-orange-500">Easy</span><span className="text-gray-900">SaaS</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link

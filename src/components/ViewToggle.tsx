@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 export function ViewToggle() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const view = searchParams.get("view") ?? "list"
+  const view = searchParams.get("view") ?? "card"
 
   const toggle = (newView: string) => {
     const params = new URLSearchParams(searchParams.toString())
