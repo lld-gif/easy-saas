@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { IdeaIcon } from "@/components/IdeaIcon"
 import { MentionBadge } from "@/components/MentionBadge"
+import { DifficultyBadge } from "@/components/DifficultyBadge"
 import type { Idea } from "@/types"
 
 interface IdeaListRowProps {
@@ -34,8 +35,11 @@ export function IdeaListRow({ idea, rank }: IdeaListRowProps) {
         </div>
       </div>
 
-      {/* Upvote */}
-      <MentionBadge count={idea.mention_count} />
+      {/* Signals */}
+      <div className="flex items-center gap-2 shrink-0">
+        <DifficultyBadge difficulty={idea.difficulty} />
+        <MentionBadge count={idea.mention_count} />
+      </div>
     </Link>
   )
 }

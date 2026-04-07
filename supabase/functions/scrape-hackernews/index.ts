@@ -7,7 +7,7 @@ const CATEGORIES = [
   "hr-recruiting", "real-estate", "logistics", "other",
 ]
 
-interface ExtractedIdea { idea_title: string; summary: string; category: string; tags: string[]; confidence: number }
+interface ExtractedIdea { idea_title: string; summary: string; category: string; tags: string[]; confidence: number; difficulty: number }
 
 async function fetchHackerNews(): Promise<string[]> {
   const posts: string[] = []
@@ -30,7 +30,7 @@ async function extractIdeas(posts: string[], apiKey: string): Promise<ExtractedI
   const allIdeas: ExtractedIdea[] = []
   for (let i = 0; i < posts.length; i += chunkSize) {
     const chunk = posts.slice(i, i + chunkSize)
-    const prompt = `You are an AI that identifies SaaS product ideas from internet posts. Analyze these posts and extract any viable SaaS ideas mentioned or implied.\n\nFor each idea found, return a JSON array of objects with:\n- idea_title: concise product name\n- summary: 2-3 sentence pitch describing the problem, solution, and target user\n- category: one of: ${CATEGORIES.join(", ")}\n- tags: 3-5 lowercase tags\n- confidence: 0.0-1.0\n\nIf a post doesn't contain a SaaS idea, skip it. Return ONLY a valid JSON array, no other text.\n\nPosts:\n${chunk.map((p, idx) => `--- Post ${idx + 1} ---\n${p}`).join("\n\n")}`
+    const prompt = `You are an AI that identifies app and SaaS product ideas from internet posts. Focus on ideas that ANYONE could build — from simple weekend projects to more complex platforms.\n\nPrioritize:\n- Micro-SaaS ideas (small, focused tools)\n- Simple utility apps (trackers, calculators, generators)\n- Ideas a beginner could vibe-code with AI assistance\n- Personal tools that could become products (habit trackers, budget tools, etc.)\n\nAlso include more complex ideas if they're clearly viable.\n\nFor each idea found, return a JSON array of objects with:\n- idea_title: concise product name (e.g., "Daily Habit Streak Tracker")\n- summary: 2-3 sentence pitch describing the problem, solution, and target user. Use simple language.\n- category: one of: ${CATEGORIES.join(", ")}\n- tags: 3-5 lowercase tags\n- confidence: 0.0-1.0 (how clearly this is a viable product idea)\n- difficulty: 1-5 (1=can build in a weekend with AI, 2=simple but needs some planning, 3=moderate complexity, 4=significant engineering, 5=complex infrastructure needed)\n\nIf a post doesn't contain a product idea, skip it. Return ONLY a valid JSON array, no other text.\n\nPosts:\n${chunk.map((p, idx) => `--- Post ${idx + 1} ---\n${p}`).join("\n\n")}`
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -63,7 +63,7 @@ async function deduplicateAndInsert(supabase: any, idea: ExtractedIdea, sourcePl
     }
     const slug = `${slugify(idea.idea_title)}-${Date.now().toString(36)}`
     const status = idea.confidence >= 0.7 ? "active" : "needs_review"
-    const { data: newIdea, error } = await supabase.from("ideas").insert({ slug, title: idea.idea_title, summary: idea.summary, category: CATEGORIES.includes(idea.category) ? idea.category : "other", tags: idea.tags, mention_count: 1, first_seen_at: new Date().toISOString(), last_seen_at: new Date().toISOString(), status }).select().single()
+    const { data: newIdea, error } = await supabase.from("ideas").insert({ slug, title: idea.idea_title, summary: idea.summary, category: CATEGORIES.includes(idea.category) ? idea.category : "other", tags: idea.tags, mention_count: 1, first_seen_at: new Date().toISOString(), last_seen_at: new Date().toISOString(), status, difficulty: idea.difficulty ?? 3 }).select().single()
     if (error) { console.warn(`Insert failed: ${error.message}`); return "error" }
     await supabase.from("idea_sources").insert({ idea_id: newIdea.id, source_platform: sourcePlatform, raw_text: sourceText?.slice(0, 2000) })
     return "new"

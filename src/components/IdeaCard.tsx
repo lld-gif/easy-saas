@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { IdeaIcon } from "@/components/IdeaIcon"
 import { MentionBadge } from "@/components/MentionBadge"
+import { DifficultyBadge } from "@/components/DifficultyBadge"
 import type { Idea } from "@/types"
 
 interface IdeaCardProps {
@@ -34,7 +35,10 @@ export function IdeaCard({ idea }: IdeaCardProps) {
               </svg>
               {[idea.category.replace('-', '/'), ...idea.tags.slice(0, 2)].join(' · ')}
             </div>
-            <MentionBadge count={idea.mention_count} />
+            <div className="flex items-center gap-1.5">
+              <DifficultyBadge difficulty={idea.difficulty} />
+              <MentionBadge count={idea.mention_count} />
+            </div>
           </div>
         </CardContent>
       </Card>

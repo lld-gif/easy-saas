@@ -6,6 +6,7 @@ export interface Idea {
   category: string
   tags: string[]
   mention_count: number
+  difficulty: number
   first_seen_at: string
   last_seen_at: string
   status: "active" | "needs_review" | "archived"

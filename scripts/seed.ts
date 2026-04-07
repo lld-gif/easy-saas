@@ -28,6 +28,7 @@ interface ExtractedIdea {
   category: string
   tags: string[]
   confidence: number
+  difficulty: number
 }
 
 // --- Source fetchers ---
@@ -123,16 +124,25 @@ async function extractIdeas(posts: string[], sourcePlatform: string): Promise<{ 
 
   for (let i = 0; i < posts.length; i += chunkSize) {
     const chunk = posts.slice(i, i + chunkSize)
-    const prompt = `You are an AI that identifies SaaS product ideas from internet posts. Analyze these posts and extract any viable SaaS ideas mentioned or implied.
+    const prompt = `You are an AI that identifies app and SaaS product ideas from internet posts. Focus on ideas that ANYONE could build — from simple weekend projects to more complex platforms.
+
+Prioritize:
+- Micro-SaaS ideas (small, focused tools)
+- Simple utility apps (trackers, calculators, generators)
+- Ideas a beginner could vibe-code with AI assistance
+- Personal tools that could become products (habit trackers, budget tools, etc.)
+
+Also include more complex ideas if they're clearly viable.
 
 For each idea found, return a JSON array of objects with:
-- idea_title: concise product name (e.g., "AI Invoice Parser for Freelancers")
-- summary: 2-3 sentence pitch describing the problem, solution, and target user
+- idea_title: concise product name (e.g., "Daily Habit Streak Tracker")
+- summary: 2-3 sentence pitch describing the problem, solution, and target user. Use simple language.
 - category: one of: ${CATEGORIES.join(", ")}
 - tags: 3-5 lowercase tags
-- confidence: 0.0-1.0 (how clearly this is a viable SaaS idea)
+- confidence: 0.0-1.0 (how clearly this is a viable product idea)
+- difficulty: 1-5 (1=can build in a weekend with AI, 2=simple but needs some planning, 3=moderate complexity, 4=significant engineering, 5=complex infrastructure needed)
 
-If a post doesn't contain a SaaS idea, skip it. Return ONLY a valid JSON array, no other text.
+If a post doesn't contain a product idea, skip it. Return ONLY a valid JSON array, no other text.
 
 Posts:
 ${chunk.map((p, idx) => `--- Post ${idx + 1} ---\n${p}`).join("\n\n")}`
@@ -223,6 +233,7 @@ async function deduplicateAndInsert(
       first_seen_at: new Date().toISOString(),
       last_seen_at: new Date().toISOString(),
       status,
+      difficulty: idea.difficulty ?? 3,
     })
     .select()
     .single()
