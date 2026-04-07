@@ -46,11 +46,12 @@ export function InfiniteIdeas({
       const sort = searchParams.get("sort") ?? "trending"
       const category = searchParams.get("category")
       const q = searchParams.get("q")
+      const difficulty = searchParams.get("difficulty")
 
       // Fetch the cursor row to get its sort value
       const { data: cursorRow } = await supabase
         .from("ideas")
-        .select("id, mention_count, first_seen_at, last_seen_at")
+        .select("id, mention_count, first_seen_at, last_seen_at, difficulty")
         .eq("id", cursor)
         .single()
 
@@ -66,6 +67,10 @@ export function InfiniteIdeas({
         .eq("status", "active")
 
       if (category) query = query.eq("category", category)
+
+      if (difficulty === "easy") query = query.lte("difficulty", 2)
+      else if (difficulty === "medium") query = query.eq("difficulty", 3)
+      else if (difficulty === "hard") query = query.gte("difficulty", 4)
 
       if (q) {
         query = query.textSearch("search_vector", q, {
@@ -98,6 +103,14 @@ export function InfiniteIdeas({
             .order("id", { ascending: false })
           query = query.or(
             `last_seen_at.lt.${cursorRow.last_seen_at},and(last_seen_at.eq.${cursorRow.last_seen_at},id.lt.${cursorRow.id})`
+          )
+          break
+        case "easiest":
+          query = query
+            .order("difficulty", { ascending: true })
+            .order("id", { ascending: false })
+          query = query.or(
+            `difficulty.gt.${cursorRow.difficulty},and(difficulty.eq.${cursorRow.difficulty},id.lt.${cursorRow.id})`
           )
           break
       }

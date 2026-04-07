@@ -24,7 +24,8 @@ import type { IdeaFilters, PopularityFilter, TimeFilter, SortOption } from "@/ty
 
 const VALID_POPULARITY: PopularityFilter[] = ["all", "trending", "rising", "new"]
 const VALID_TIME: TimeFilter[] = ["all", "week", "month", "3months"]
-const VALID_SORT: SortOption[] = ["trending", "newest", "recent"]
+const VALID_SORT: SortOption[] = ["trending", "newest", "recent", "easiest"]
+const VALID_DIFFICULTY = ["easy", "medium", "hard"] as const
 const VALID_VIEW = ["card", "list"] as const
 
 function validateEnum<T extends string>(value: unknown, valid: readonly T[], fallback: T): T {
@@ -40,5 +41,6 @@ export function parseSearchParams(params: Record<string, string | string[] | und
     sort: validateEnum(params.sort, VALID_SORT, "trending"),
     view: validateEnum(params.view, VALID_VIEW, "card"),
     cursor: typeof params.cursor === "string" ? params.cursor : undefined,
+    difficulty: typeof params.difficulty === "string" && (VALID_DIFFICULTY as readonly string[]).includes(params.difficulty) ? params.difficulty as "easy" | "medium" | "hard" : undefined,
   }
 }

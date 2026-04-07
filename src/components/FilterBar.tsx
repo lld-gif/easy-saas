@@ -20,7 +20,15 @@ const TOP_CATEGORIES = [
 const SORT_OPTIONS = [
   { value: "trending", label: "Trending" },
   { value: "newest", label: "Newest" },
+  { value: "easiest", label: "Easiest first" },
   { value: "recent", label: "Recent" },
+]
+
+const DIFFICULTY_OPTIONS = [
+  { value: "", label: "Any difficulty" },
+  { value: "easy", label: "🟢 Easy" },
+  { value: "medium", label: "🟡 Medium" },
+  { value: "hard", label: "🔴 Hard" },
 ]
 
 export function FilterBar() {
@@ -29,6 +37,7 @@ export function FilterBar() {
 
   const activeCategory = searchParams.get("category") ?? ""
   const activeSort = searchParams.get("sort") ?? "trending"
+  const activeDifficulty = searchParams.get("difficulty") ?? ""
 
   const setFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -43,7 +52,7 @@ export function FilterBar() {
 
   return (
     <div className="space-y-3">
-      {/* Tab bar */}
+      {/* Category tab bar */}
       <div className="flex items-center gap-0 border-b border-gray-200 overflow-x-auto scrollbar-hide">
         {TOP_CATEGORIES.map((cat) => (
           <button
@@ -61,18 +70,40 @@ export function FilterBar() {
         ))}
       </div>
 
-      {/* Sort dropdown */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400">Sort by:</span>
-        <select
-          value={activeSort}
-          onChange={(e) => setFilter("sort", e.target.value)}
-          className="text-sm font-medium text-gray-700 bg-transparent border-none cursor-pointer focus:outline-none focus:ring-0 pr-6"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
+      {/* Sort + Difficulty row */}
+      <div className="flex items-center gap-6 flex-wrap">
+        {/* Sort */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400">Sort:</span>
+          <select
+            value={activeSort}
+            onChange={(e) => setFilter("sort", e.target.value)}
+            className="text-sm font-medium text-gray-700 bg-transparent border-none cursor-pointer focus:outline-none focus:ring-0 pr-6"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Difficulty filter */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-gray-400">Difficulty:</span>
+          {DIFFICULTY_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setFilter("difficulty", opt.value)}
+              className={cn(
+                "text-xs px-2.5 py-1 rounded-full transition-all",
+                (activeDifficulty === opt.value || (opt.value === "" && !activeDifficulty))
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-500 hover:bg-gray-100"
+              )}
+            >
+              {opt.label}
+            </button>
           ))}
-        </select>
+        </div>
       </div>
     </div>
   )

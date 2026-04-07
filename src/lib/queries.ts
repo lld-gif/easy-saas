@@ -73,6 +73,20 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
     })
   }
 
+  if (filters.difficulty) {
+    switch (filters.difficulty) {
+      case "easy":
+        query = query.lte("difficulty", 2)
+        break
+      case "medium":
+        query = query.gte("difficulty", 3).lte("difficulty", 3)
+        break
+      case "hard":
+        query = query.gte("difficulty", 4)
+        break
+    }
+  }
+
   // Sort
   switch (sort) {
     case "trending":
@@ -84,13 +98,16 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
     case "recent":
       query = query.order("last_seen_at", { ascending: false }).order("id", { ascending: false })
       break
+    case "easiest":
+      query = query.order("difficulty", { ascending: true }).order("id", { ascending: false })
+      break
   }
 
   // Cursor pagination
   if (filters.cursor) {
     const { data: cursorRow } = await supabase
       .from("ideas")
-      .select("id, mention_count, first_seen_at, last_seen_at")
+      .select("id, mention_count, first_seen_at, last_seen_at, difficulty")
       .eq("id", filters.cursor)
       .single()
 
@@ -109,6 +126,11 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
         case "recent":
           query = query.or(
             `last_seen_at.lt.${cursorRow.last_seen_at},and(last_seen_at.eq.${cursorRow.last_seen_at},id.lt.${cursorRow.id})`
+          )
+          break
+        case "easiest":
+          query = query.or(
+            `difficulty.gt.${cursorRow.difficulty},and(difficulty.eq.${cursorRow.difficulty},id.lt.${cursorRow.id})`
           )
           break
       }

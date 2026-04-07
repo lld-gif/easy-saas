@@ -23,7 +23,7 @@ export interface IdeaSource {
   extracted_at: string
 }
 
-export type SortOption = "trending" | "newest" | "recent"
+export type SortOption = "trending" | "newest" | "recent" | "easiest"
 
 export type PopularityFilter = "all" | "trending" | "rising" | "new"
 
@@ -37,4 +37,5 @@ export interface IdeaFilters {
   sort?: SortOption
   view?: "card" | "list"
   cursor?: string
+  difficulty?: "easy" | "medium" | "hard"
 }
