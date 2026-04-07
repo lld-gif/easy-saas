@@ -76,7 +76,7 @@ export function FilterBar() {
           <select
             value={activeSort}
             onChange={(e) => setFilter("sort", e.target.value)}
-            className="bg-background border rounded px-2 py-1 text-sm"
+            className="bg-card border border-border/50 rounded px-2 py-1 text-sm text-foreground"
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -88,7 +88,7 @@ export function FilterBar() {
           <select
             value={activePopularity}
             onChange={(e) => setFilter("popularity", e.target.value)}
-            className="bg-background border rounded px-2 py-1 text-sm"
+            className="bg-card border border-border/50 rounded px-2 py-1 text-sm text-foreground"
           >
             {POPULARITY_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -100,7 +100,7 @@ export function FilterBar() {
           <select
             value={activeTime}
             onChange={(e) => setFilter("time", e.target.value)}
-            className="bg-background border rounded px-2 py-1 text-sm"
+            className="bg-card border border-border/50 rounded px-2 py-1 text-sm text-foreground"
           >
             {TIME_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>

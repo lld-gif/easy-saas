@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { HeroSection } from "@/components/HeroSection"
-import { IdeaCard } from "@/components/IdeaCard"
+import { IdeaListRow } from "@/components/IdeaListRow"
 import { getTrendingIdeas, getIdeaCount } from "@/lib/queries"
 import { CATEGORIES } from "@/lib/categories"
 
@@ -41,9 +41,9 @@ export default async function Home() {
                 View all &rarr;
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {trending.map((idea) => (
-                <IdeaCard key={idea.id} idea={idea} />
+            <div className="divide-y divide-border/50">
+              {trending.map((idea, index) => (
+                <IdeaListRow key={idea.id} idea={idea} rank={index + 1} />
               ))}
             </div>
           </div>

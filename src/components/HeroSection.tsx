@@ -23,7 +23,7 @@ export function HeroSection({ ideaCount }: HeroSectionProps) {
   }
 
   return (
-    <section className="py-24 px-4 text-center bg-gradient-to-b from-indigo-50/50 to-background">
+    <section className="py-24 px-4 text-center bg-gradient-to-b from-indigo-950/30 to-transparent">
       <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
         Discover your next SaaS idea
       </h1>
@@ -40,8 +40,10 @@ export function HeroSection({ ideaCount }: HeroSectionProps) {
         <Button type="submit">Search</Button>
       </form>
       {ideaCount > 0 && (
-        <p className="mt-4 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{ideaCount}</span> ideas discovered and counting
+        <p className="mt-6 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-primary font-medium">
+            {ideaCount} ideas discovered
+          </span>
         </p>
       )}
     </section>
