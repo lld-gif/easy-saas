@@ -24,12 +24,6 @@ const SORT_OPTIONS = [
   { value: "recent", label: "Recent" },
 ]
 
-const DIFFICULTY_OPTIONS = [
-  { value: "", label: "Any difficulty" },
-  { value: "easy", label: "🟢 Easy" },
-  { value: "medium", label: "🟡 Medium" },
-  { value: "hard", label: "🔴 Hard" },
-]
 
 export function FilterBar() {
   const router = useRouter()
@@ -87,22 +81,18 @@ export function FilterBar() {
         </div>
 
         {/* Difficulty filter */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <span className="text-xs text-gray-400">Difficulty:</span>
-          {DIFFICULTY_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setFilter("difficulty", opt.value)}
-              className={cn(
-                "text-xs px-2.5 py-1 rounded-full transition-all",
-                (activeDifficulty === opt.value || (opt.value === "" && !activeDifficulty))
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-500 hover:bg-gray-100"
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
+          <select
+            value={activeDifficulty}
+            onChange={(e) => setFilter("difficulty", e.target.value)}
+            className="text-sm font-medium text-gray-700 bg-transparent border-none cursor-pointer focus:outline-none focus:ring-0 pr-6"
+          >
+            <option value="">Any</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
         </div>
       </div>
     </div>
