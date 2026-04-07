@@ -10,6 +10,9 @@ export function SearchBar() {
   const [query, setQuery] = useState(searchParams.get("q") ?? "")
 
   useEffect(() => {
+    // Skip navigation if value hasn't changed from URL
+    if (query.trim() === (searchParams.get("q") ?? "")) return
+
     const timeout = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString())
       if (query.trim()) {
