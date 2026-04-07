@@ -130,4 +130,11 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

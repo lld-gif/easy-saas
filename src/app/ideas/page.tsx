@@ -3,8 +3,7 @@ import { Suspense } from "react"
 import { SearchBar } from "@/components/SearchBar"
 import { FilterBar } from "@/components/FilterBar"
 import { ViewToggle } from "@/components/ViewToggle"
-import { IdeaGrid } from "@/components/IdeaGrid"
-import { LoadMoreButton } from "@/components/LoadMoreButton"
+import { InfiniteIdeas } from "@/components/InfiniteIdeas"
 import { getIdeas } from "@/lib/queries"
 import { parseSearchParams } from "@/lib/utils"
 
@@ -41,19 +40,16 @@ export default async function IdeasPage({ searchParams }: Props) {
       </Suspense>
 
       <div className="mt-6">
-        <IdeaGrid
-          ideas={ideas}
-          view={filters.view ?? "card"}
-          hasFilters={!!(filters.q || filters.popularity || filters.time)}
-          hasCategory={!!filters.category}
-        />
-      </div>
-
-      {nextCursor && (
         <Suspense fallback={null}>
-          <LoadMoreButton cursor={nextCursor} />
+          <InfiniteIdeas
+            initialIdeas={ideas}
+            initialCursor={nextCursor}
+            view={filters.view ?? "card"}
+            hasFilters={!!(filters.q || filters.popularity || filters.time)}
+            hasCategory={!!filters.category}
+          />
         </Suspense>
-      )}
+      </div>
     </main>
   )
 }
