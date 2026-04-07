@@ -2,7 +2,6 @@ import Link from "next/link"
 import { HeroSection } from "@/components/HeroSection"
 import { IdeaListRow } from "@/components/IdeaListRow"
 import { getTrendingIdeas, getIdeaCount } from "@/lib/queries"
-import { CATEGORIES } from "@/lib/categories"
 
 export default async function Home() {
   const [trending, ideaCount] = await Promise.all([
@@ -13,23 +12,6 @@ export default async function Home() {
   return (
     <main>
       <HeroSection ideaCount={ideaCount} />
-
-      {/* Category chips */}
-      <section className="py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {CATEGORIES.filter((c) => c.slug !== "other").map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/ideas?category=${cat.slug}`}
-                className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap ${cat.color} hover:opacity-80 transition-opacity`}
-              >
-                {cat.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Trending ideas */}
       {trending.length > 0 && (

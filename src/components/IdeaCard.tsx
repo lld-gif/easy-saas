@@ -14,7 +14,7 @@ export function IdeaCard({ idea }: IdeaCardProps) {
       <Card className="h-full hover:shadow-md border-gray-200 transition-all duration-200 cursor-pointer">
         <CardHeader className="pb-3">
           <div className="flex items-start gap-3">
-            <IdeaIcon title={idea.title} category={idea.category} size="lg" />
+            <IdeaIcon category={idea.category} size="lg" />
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-gray-900 leading-snug line-clamp-2">
                 {idea.title}

@@ -15,7 +15,7 @@ export function IdeaListRow({ idea, rank }: IdeaListRowProps) {
       className="group flex items-center gap-4 px-4 py-5 border-b border-gray-100 transition-colors hover:bg-gray-50/50"
     >
       {/* Icon */}
-      <IdeaIcon title={idea.title} category={idea.category} size="md" />
+      <IdeaIcon category={idea.category} size="md" />
 
       {/* Content */}
       <div className="flex-1 min-w-0">
