@@ -8,7 +8,7 @@ import { getIdeas } from "@/lib/queries"
 import { parseSearchParams } from "@/lib/utils"
 
 export const metadata: Metadata = {
-  title: "Browse SaaS Ideas — EasySaaS",
+  title: "Browse SaaS Ideas — Vibe Code Ideas",
   description: "Search and filter hundreds of validated SaaS ideas from across the internet.",
 }
 

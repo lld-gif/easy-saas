@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
                 <path d="M7 11V7a5 5 0 0110 0v4" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-zinc-100">EasySaaS Admin</span>
+            <span className="text-lg font-bold text-zinc-100">Vibe Code Ideas Admin</span>
           </div>
           <p className="text-sm text-zinc-500">Enter the admin password to continue</p>
         </div>

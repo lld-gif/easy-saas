@@ -1,7 +1,7 @@
 ## Deployment Workflow
 
 - `develop` branch = Vercel preview deployment. All work happens here first.
-- `main` branch = Vercel production deployment (https://easy-saas-pi.vercel.app).
+- `main` branch = Vercel production deployment (https://vibecodeideas.ai / https://easy-saas-pi.vercel.app).
 - **Never push or merge to `main` without asking the user first.** Always confirm before triggering a production deploy.
 
 <!-- BEGIN:nextjs-agent-rules -->

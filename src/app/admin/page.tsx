@@ -27,7 +27,7 @@ export default async function AdminPage() {
       <header className="border-b border-zinc-800 bg-zinc-900 px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold text-zinc-100">EasySaaS Admin</h1>
+            <h1 className="text-lg font-bold text-zinc-100">Vibe Code Ideas Admin</h1>
             <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-xs font-medium text-orange-400">
               Dashboard
             </span>

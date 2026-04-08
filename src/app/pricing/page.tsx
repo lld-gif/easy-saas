@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { UpgradeButton } from "@/components/UpgradeButton"
 
 export const metadata: Metadata = {
-  title: "Pricing — EasySaaS",
+  title: "Pricing — Vibe Code Ideas",
   description: "Unlock quick-start packages for every SaaS idea.",
 }
 

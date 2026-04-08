@@ -16,14 +16,14 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "EasySaaS — Discover Your Next SaaS Idea",
+  title: "Vibe Code Ideas — Discover Your Next SaaS Idea",
   description:
     "Browse validated SaaS ideas with real demand signals.",
   openGraph: {
-    title: "EasySaaS — Discover Your Next SaaS Idea",
+    title: "Vibe Code Ideas — Discover Your Next SaaS Idea",
     description:
       "Browse validated SaaS ideas with real demand signals.",
-    siteName: "EasySaaS",
+    siteName: "Vibe Code Ideas",
   },
 }
 

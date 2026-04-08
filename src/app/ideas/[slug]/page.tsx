@@ -27,15 +27,15 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const idea = await getIdeaBySlug(slug)
-  if (!idea) return { title: "Idea Not Found — EasySaaS" }
+  if (!idea) return { title: "Idea Not Found — Vibe Code Ideas" }
 
   return {
-    title: `${idea.title} — EasySaaS`,
+    title: `${idea.title} — Vibe Code Ideas`,
     description: idea.summary,
     openGraph: {
-      title: `${idea.title} — EasySaaS`,
+      title: `${idea.title} — Vibe Code Ideas`,
       description: idea.summary,
-      siteName: "EasySaaS",
+      siteName: "Vibe Code Ideas",
     },
   }
 }
