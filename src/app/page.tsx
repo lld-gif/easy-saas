@@ -19,7 +19,7 @@ export default async function Home() {
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold">Trending Ideas</h2>
-              <Link href="/ideas" className="text-sm text-gray-400 hover:text-orange-500 transition-colors">
+              <Link href="/ideas" className="text-sm text-muted-foreground hover:text-orange-500 transition-colors">
                 View all &rarr;
               </Link>
             </div>

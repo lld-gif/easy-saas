@@ -47,7 +47,7 @@ export function FilterBar() {
   return (
     <div className="space-y-3">
       {/* Category tab bar */}
-      <div className="flex items-center gap-0 border-b border-zinc-800 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-0 border-b border-border overflow-x-auto scrollbar-hide">
         {TOP_CATEGORIES.map((cat) => (
           <button
             key={cat.slug}
@@ -55,8 +55,8 @@ export function FilterBar() {
             className={cn(
               "px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-[1px]",
               (activeCategory === cat.slug || (cat.slug === "" && !activeCategory))
-                ? "border-orange-500 text-orange-400"
-                : "border-transparent text-zinc-500 hover:text-zinc-300 hover:border-zinc-700"
+                ? "border-orange-500 text-orange-500 dark:text-orange-400"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:border-input"
             )}
           >
             {cat.label}
@@ -68,30 +68,30 @@ export function FilterBar() {
       <div className="flex items-center gap-6 flex-wrap">
         {/* Sort */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500">Sort:</span>
+          <span className="text-xs text-muted-foreground">Sort:</span>
           <select
             value={activeSort}
             onChange={(e) => setFilter("sort", e.target.value)}
-            className="text-sm font-medium text-zinc-300 bg-transparent border-none cursor-pointer focus:outline-none focus:ring-0 pr-6"
+            className="text-sm font-medium text-foreground bg-transparent border-none cursor-pointer focus:outline-none focus:ring-0 pr-6"
           >
             {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value} className="bg-zinc-900 text-zinc-300">{opt.label}</option>
+              <option key={opt.value} value={opt.value} className="bg-card text-foreground">{opt.label}</option>
             ))}
           </select>
         </div>
 
         {/* Difficulty filter */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500">Difficulty:</span>
+          <span className="text-xs text-muted-foreground">Difficulty:</span>
           <select
             value={activeDifficulty}
             onChange={(e) => setFilter("difficulty", e.target.value)}
-            className="text-sm font-medium text-zinc-300 bg-transparent border-none cursor-pointer focus:outline-none focus:ring-0 pr-6"
+            className="text-sm font-medium text-foreground bg-transparent border-none cursor-pointer focus:outline-none focus:ring-0 pr-6"
           >
-            <option value="" className="bg-zinc-900 text-zinc-300">Any</option>
-            <option value="easy" className="bg-zinc-900 text-zinc-300">Easy</option>
-            <option value="medium" className="bg-zinc-900 text-zinc-300">Medium</option>
-            <option value="hard" className="bg-zinc-900 text-zinc-300">Hard</option>
+            <option value="" className="bg-card text-foreground">Any</option>
+            <option value="easy" className="bg-card text-foreground">Easy</option>
+            <option value="medium" className="bg-card text-foreground">Medium</option>
+            <option value="hard" className="bg-card text-foreground">Hard</option>
           </select>
         </div>
       </div>

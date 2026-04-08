@@ -19,7 +19,7 @@ const dotColors = {
   orange: "bg-orange-500",
   blue: "bg-blue-500",
   red: "bg-red-500",
-  gray: "bg-zinc-500",
+  gray: "bg-zinc-500 dark:bg-zinc-400",
 }
 
 const fillColors = {
@@ -27,15 +27,15 @@ const fillColors = {
   orange: "bg-orange-400/30",
   blue: "bg-blue-400/30",
   red: "bg-red-400/30",
-  gray: "bg-zinc-500/30",
+  gray: "bg-zinc-400/30",
 }
 
 const textColors = {
-  green: "text-green-400",
-  orange: "text-orange-400",
-  blue: "text-blue-400",
-  red: "text-red-400",
-  gray: "text-zinc-400",
+  green: "text-green-600 dark:text-green-400",
+  orange: "text-orange-600 dark:text-orange-400",
+  blue: "text-blue-600 dark:text-blue-400",
+  red: "text-red-600 dark:text-red-400",
+  gray: "text-muted-foreground",
 }
 
 export function SignalBar({
@@ -50,13 +50,13 @@ export function SignalBar({
   if (compact) {
     return (
       <div className="flex items-center gap-1.5" title={`${label}: ${value} (top ${100 - clamped}%)`}>
-        <div className="relative h-1.5 w-10 rounded-full bg-zinc-800">
+        <div className="relative h-1.5 w-10 rounded-full bg-muted">
           <div
             className={`absolute left-0 top-0 h-1.5 rounded-full ${fillColors[color]}`}
             style={{ width: `${clamped}%` }}
           />
           <div
-            className={`absolute top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full ${dotColors[color]} border border-zinc-900 shadow-sm`}
+            className={`absolute top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full ${dotColors[color]} border border-background shadow-sm`}
             style={{ left: `calc(${clamped}% - 5px)` }}
           />
         </div>
@@ -67,20 +67,20 @@ export function SignalBar({
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-zinc-400">{label}</span>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <span className={`text-xs font-semibold ${textColors[color]}`}>{value}</span>
       </div>
-      <div className="relative h-2 w-full rounded-full bg-zinc-800">
+      <div className="relative h-2 w-full rounded-full bg-muted">
         <div
           className={`absolute left-0 top-0 h-2 rounded-full ${fillColors[color]}`}
           style={{ width: `${clamped}%` }}
         />
         <div
-          className={`absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full ${dotColors[color]} border-2 border-zinc-900 shadow-sm`}
+          className={`absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full ${dotColors[color]} border-2 border-background shadow-sm`}
           style={{ left: `calc(${clamped}% - 6px)` }}
         />
       </div>
-      <div className="flex justify-between text-[10px] text-zinc-600">
+      <div className="flex justify-between text-[10px] text-muted-foreground">
         <span>Low</span>
         <span>Top {Math.max(1, 100 - clamped)}%</span>
         <span>High</span>

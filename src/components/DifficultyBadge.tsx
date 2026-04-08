@@ -3,9 +3,9 @@ interface DifficultyBadgeProps {
 }
 
 function getLevel(d: number): { label: string; color: string; bars: number } {
-  if (d <= 2) return { label: "Easy", color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10", bars: 1 }
-  if (d <= 3) return { label: "Medium", color: "text-amber-400 border-amber-500/30 bg-amber-500/10", bars: 2 }
-  return { label: "Hard", color: "text-red-400 border-red-500/30 bg-red-500/10", bars: 3 }
+  if (d <= 2) return { label: "Easy", color: "text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10", bars: 1 }
+  if (d <= 3) return { label: "Medium", color: "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10", bars: 2 }
+  return { label: "Hard", color: "text-red-600 dark:text-red-400 border-red-500/30 bg-red-500/10", bars: 3 }
 }
 
 export function DifficultyBadge({ difficulty }: DifficultyBadgeProps) {

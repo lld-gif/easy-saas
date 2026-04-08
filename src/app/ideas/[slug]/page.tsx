@@ -88,20 +88,20 @@ export default async function IdeaDetailPage({ params }: Props) {
         <CategoryBadge category={idea.category} />
         <DifficultyBadge difficulty={idea.difficulty} />
         {idea.tags.map((tag) => (
-          <span key={tag} className="text-xs text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700">
+          <span key={tag} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-input">
             {tag}
           </span>
         ))}
       </div>
 
-      <div className="prose prose-invert max-w-none mb-8">
-        <p className="text-lg leading-relaxed text-zinc-300">{idea.summary}</p>
+      <div className="prose dark:prose-invert max-w-none mb-8">
+        <p className="text-lg leading-relaxed text-foreground/80">{idea.summary}</p>
       </div>
 
       {/* Signals Section */}
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-5 mb-8">
-        <h2 className="font-semibold text-zinc-100 mb-4">Idea Signals</h2>
-        <p className="text-xs text-zinc-500 mb-5">
+      <div className="rounded-lg border border-border bg-card p-5 mb-8">
+        <h2 className="font-semibold text-foreground mb-4">Idea Signals</h2>
+        <p className="text-xs text-muted-foreground mb-5">
           Indexed against {stats.total} ideas in the database
         </p>
 
@@ -149,8 +149,8 @@ export default async function IdeaDetailPage({ params }: Props) {
       </div>
 
       {/* Mentions Section */}
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 mb-8">
-        <h2 className="font-semibold text-zinc-100 mb-2">Activity</h2>
+      <div className="rounded-lg border border-border bg-card/50 p-4 mb-8">
+        <h2 className="font-semibold text-foreground mb-2">Activity</h2>
         <p className="text-sm text-muted-foreground">
           Spotted <span className="font-semibold text-foreground">{idea.mention_count}</span> time{idea.mention_count !== 1 ? "s" : ""} across
           the internet since {formatDate(idea.first_seen_at)}.

@@ -53,7 +53,7 @@ export function AuthButton() {
     return (
       <button
         onClick={signIn}
-        className="text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
+        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
       >
         Sign in
       </button>
@@ -62,13 +62,13 @@ export function AuthButton() {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm text-zinc-400 hidden sm:inline">
+      <span className="text-sm text-muted-foreground hidden sm:inline">
         {user.email?.split("@")[0]}
       </span>
       {status === "pro" ? (
         <>
-          <span className="text-xs font-bold bg-orange-500/15 text-orange-400 px-2 py-0.5 rounded-full">PRO</span>
-          <button onClick={manageSubscription} className="text-xs text-zinc-500 hover:text-zinc-300">
+          <span className="text-xs font-bold bg-orange-500/15 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full">PRO</span>
+          <button onClick={manageSubscription} className="text-xs text-muted-foreground hover:text-foreground">
             Manage
           </button>
         </>
@@ -77,7 +77,7 @@ export function AuthButton() {
           Upgrade
         </a>
       )}
-      <button onClick={signOut} className="text-xs text-zinc-500 hover:text-zinc-300">
+      <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground">
         Sign out
       </button>
     </div>
