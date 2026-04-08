@@ -28,14 +28,26 @@ export function IdeaCard({ idea }: IdeaCardProps) {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="flex items-center justify-between">
-            <div className="text-xs text-gray-400 flex items-center gap-1">
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="text-xs text-gray-400 flex items-center gap-1 min-w-0">
+              <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
                 <line x1="7" y1="7" x2="7.01" y2="7" />
               </svg>
-              {[idea.category.replace('-', '/'), ...idea.tags.slice(0, 2)].join(' · ')}
+              <span className="truncate">
+                {[idea.category.replace('-', '/'), ...idea.tags.slice(0, 2)].join(' · ')}
+              </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
+              {idea.market_signal === "strong" && (
+                <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700" title="Strong market signal">
+                  🔥
+                </span>
+              )}
+              {idea.competition_level === "low" && (
+                <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700" title="Low competition">
+                  💎
+                </span>
+              )}
               <DifficultyBadge difficulty={idea.difficulty} />
               <MentionBadge count={idea.mention_count} />
             </div>

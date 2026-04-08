@@ -37,6 +37,16 @@ export function IdeaListRow({ idea, rank }: IdeaListRowProps) {
 
       {/* Signals */}
       <div className="flex items-center gap-2 shrink-0">
+        {idea.market_signal === "strong" && (
+          <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700" title="Strong market signal">
+            🔥
+          </span>
+        )}
+        {idea.competition_level === "low" && (
+          <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700" title="Low competition">
+            💎
+          </span>
+        )}
         <DifficultyBadge difficulty={idea.difficulty} />
         <MentionBadge count={idea.mention_count} />
       </div>

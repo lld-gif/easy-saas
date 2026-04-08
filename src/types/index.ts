@@ -7,6 +7,10 @@ export interface Idea {
   tags: string[]
   mention_count: number
   difficulty: number
+  popularity_score: number
+  market_signal: "strong" | "moderate" | "weak" | "unknown"
+  competition_level: "low" | "medium" | "high" | "unknown"
+  revenue_potential: string
   first_seen_at: string
   last_seen_at: string
   status: "active" | "needs_review" | "archived"
@@ -23,7 +27,7 @@ export interface IdeaSource {
   extracted_at: string
 }
 
-export type SortOption = "trending" | "newest" | "recent" | "easiest"
+export type SortOption = "trending" | "newest" | "recent" | "easiest" | "popularity"
 
 export type PopularityFilter = "all" | "trending" | "rising" | "new"
 
@@ -53,4 +57,33 @@ export interface IdeaPackage {
   brand_kit: string
   launch_checklist: string
   generated_at: string
+}
+
+export interface ScrapeRun {
+  id: string
+  source_platform: string
+  started_at: string
+  finished_at: string
+  posts_fetched: number
+  ideas_extracted: number
+  ideas_new: number
+  ideas_duplicate: number
+  ideas_error: number
+  duration_ms: number
+  status: "success" | "failure"
+  error_message: string | null
+}
+
+export interface AdminStats {
+  total_ideas: number
+  active_ideas: number
+  needs_review: number
+  by_category: { category: string; count: number }[]
+  by_source: { source_platform: string; count: number }[]
+  daily_ingest: { date: string; count: number }[]
+  quality: {
+    missing_enrichment: number
+    low_mentions: number
+    default_difficulty: number
+  }
 }

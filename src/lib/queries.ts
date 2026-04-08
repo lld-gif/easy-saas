@@ -101,13 +101,16 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
     case "easiest":
       query = query.order("difficulty", { ascending: true }).order("id", { ascending: false })
       break
+    case "popularity":
+      query = query.order("popularity_score", { ascending: false }).order("id", { ascending: false })
+      break
   }
 
   // Cursor pagination
   if (filters.cursor) {
     const { data: cursorRow } = await supabase
       .from("ideas")
-      .select("id, mention_count, first_seen_at, last_seen_at, difficulty")
+      .select("id, mention_count, first_seen_at, last_seen_at, difficulty, popularity_score")
       .eq("id", filters.cursor)
       .single()
 
@@ -131,6 +134,11 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
         case "easiest":
           query = query.or(
             `difficulty.gt.${cursorRow.difficulty},and(difficulty.eq.${cursorRow.difficulty},id.lt.${cursorRow.id})`
+          )
+          break
+        case "popularity":
+          query = query.or(
+            `popularity_score.lt.${cursorRow.popularity_score || 0},and(popularity_score.eq.${cursorRow.popularity_score || 0},id.lt.${cursorRow.id})`
           )
           break
       }
