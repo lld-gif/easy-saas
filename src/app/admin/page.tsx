@@ -54,25 +54,25 @@ export default async function AdminPage() {
         </div>
         <div className="space-y-4">
           {/* Trending This Week */}
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700">Top Trending This Week</h3>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+            <h3 className="mb-3 text-sm font-semibold text-zinc-300">Top Trending This Week</h3>
             {trending.length === 0 ? (
-              <p className="text-sm text-gray-400">No activity this week.</p>
+              <p className="text-sm text-zinc-500">No activity this week.</p>
             ) : (
               <div className="space-y-2">
                 {trending.map((idea, i) => (
                   <div key={idea.id} className="flex items-start gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-orange-100 text-xs font-bold text-orange-600">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-orange-500/15 text-xs font-bold text-orange-400">
                       {i + 1}
                     </span>
                     <div className="min-w-0">
                       <Link
                         href={`/ideas/${idea.slug}`}
-                        className="text-sm font-medium text-gray-800 hover:text-orange-600"
+                        className="text-sm font-medium text-zinc-200 hover:text-orange-400"
                       >
                         {idea.title}
                       </Link>
-                      <div className="flex gap-2 text-xs text-gray-400">
+                      <div className="flex gap-2 text-xs text-zinc-500">
                         <span>{idea.category}</span>
                         <span>·</span>
                         <span>{idea.mention_count} mentions</span>
@@ -80,8 +80,8 @@ export default async function AdminPage() {
                           <>
                             <span>·</span>
                             <span className={
-                              idea.market_signal === "strong" ? "text-green-600" :
-                              idea.market_signal === "moderate" ? "text-yellow-600" : "text-gray-400"
+                              idea.market_signal === "strong" ? "text-green-400" :
+                              idea.market_signal === "moderate" ? "text-yellow-400" : "text-zinc-500"
                             }>
                               {idea.market_signal} signal
                             </span>

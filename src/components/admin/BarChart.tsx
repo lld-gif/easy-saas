@@ -17,24 +17,24 @@ export function BarChart({ data, title, maxBars = 14 }: BarChartProps) {
   const total = items.reduce((sum, d) => sum + d.value, 0)
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <h3 className="mb-4 text-sm font-semibold text-gray-700">{title}</h3>
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+      <h3 className="mb-4 text-sm font-semibold text-zinc-300">{title}</h3>
       <div className="space-y-2">
         {items.map((item, i) => {
           const pct = Math.round((item.value / total) * 100)
           const width = Math.max((item.value / maxValue) * 100, 2)
           return (
             <div key={item.label} className="flex items-center gap-3">
-              <span className="w-28 shrink-0 truncate text-xs text-gray-600">
+              <span className="w-28 shrink-0 truncate text-xs text-zinc-400">
                 {item.label}
               </span>
-              <div className="relative flex-1 h-5 rounded bg-gray-100">
+              <div className="relative flex-1 h-5 rounded bg-zinc-800">
                 <div
                   className={`h-5 rounded ${item.color || defaultColors[i % defaultColors.length]}`}
                   style={{ width: `${width}%` }}
                 />
               </div>
-              <span className="w-16 shrink-0 text-right text-xs font-medium text-gray-700">
+              <span className="w-16 shrink-0 text-right text-xs font-medium text-zinc-300">
                 {item.value} ({pct}%)
               </span>
             </div>

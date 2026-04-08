@@ -11,16 +11,16 @@ export default async function AdminLayout({
   if (!admin) redirect("/")
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white px-6 py-3">
+    <div className="min-h-screen bg-zinc-950">
+      <header className="border-b border-zinc-800 bg-zinc-900 px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold text-gray-900">EasySaaS Admin</h1>
-            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+            <h1 className="text-lg font-bold text-zinc-100">EasySaaS Admin</h1>
+            <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-xs font-medium text-orange-400">
               Dashboard
             </span>
           </div>
-          <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
+          <Link href="/" className="text-sm text-zinc-400 hover:text-zinc-200">
             ← Back to site
           </Link>
         </div>

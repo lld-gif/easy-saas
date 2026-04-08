@@ -8,14 +8,13 @@ interface DailyChartProps {
 export function DailyChart({ data, title }: DailyChartProps) {
   const maxCount = Math.max(...data.map((d) => d.count), 1)
   const chartHeight = 160
-  const barWidth = 100 / data.length
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <h3 className="mb-4 text-sm font-semibold text-gray-700">{title}</h3>
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+      <h3 className="mb-4 text-sm font-semibold text-zinc-300">{title}</h3>
       <div className="relative" style={{ height: chartHeight + 40 }}>
         {/* Y-axis labels */}
-        <div className="absolute left-0 top-0 flex h-full w-8 flex-col justify-between text-xs text-gray-400">
+        <div className="absolute left-0 top-0 flex h-full w-8 flex-col justify-between text-xs text-zinc-500">
           <span>{maxCount}</span>
           <span>{Math.round(maxCount / 2)}</span>
           <span>0</span>
@@ -30,8 +29,8 @@ export function DailyChart({ data, title }: DailyChartProps) {
           preserveAspectRatio="none"
         >
           {/* Grid lines */}
-          <line x1="0" y1={chartHeight} x2={data.length * 20} y2={chartHeight} stroke="#e5e7eb" strokeWidth="1" />
-          <line x1="0" y1={chartHeight / 2} x2={data.length * 20} y2={chartHeight / 2} stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="4" />
+          <line x1="0" y1={chartHeight} x2={data.length * 20} y2={chartHeight} stroke="#3f3f46" strokeWidth="1" />
+          <line x1="0" y1={chartHeight / 2} x2={data.length * 20} y2={chartHeight / 2} stroke="#3f3f46" strokeWidth="0.5" strokeDasharray="4" />
 
           {/* Bars */}
           {data.map((d, i) => {
@@ -55,7 +54,7 @@ export function DailyChart({ data, title }: DailyChartProps) {
                     x={x + 8}
                     y={chartHeight + 14}
                     textAnchor="middle"
-                    className="fill-gray-400"
+                    className="fill-zinc-500"
                     fontSize="7"
                   >
                     {d.date.slice(5)}
@@ -67,7 +66,7 @@ export function DailyChart({ data, title }: DailyChartProps) {
                     x={x + 8}
                     y={y - 3}
                     textAnchor="middle"
-                    className="fill-gray-500 opacity-0 hover:opacity-100"
+                    className="fill-zinc-400 opacity-0 hover:opacity-100"
                     fontSize="6"
                   >
                     {d.count}
@@ -80,7 +79,7 @@ export function DailyChart({ data, title }: DailyChartProps) {
       </div>
 
       {/* Summary */}
-      <div className="mt-2 flex gap-4 text-xs text-gray-500">
+      <div className="mt-2 flex gap-4 text-xs text-zinc-500">
         <span>Total: {data.reduce((s, d) => s + d.count, 0)}</span>
         <span>Avg: {Math.round(data.reduce((s, d) => s + d.count, 0) / data.length)}/day</span>
         <span>Peak: {maxCount}</span>
