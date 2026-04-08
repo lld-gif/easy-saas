@@ -19,9 +19,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem("theme") as Theme | null
-    if (stored === "light") {
-      setTheme("light")
-    }
+    const initial = stored === "light" ? "light" : "dark"
+    setTheme(initial)
+    document.documentElement.classList.toggle("dark", initial === "dark")
   }, [])
 
   const toggleTheme = useCallback(() => {
