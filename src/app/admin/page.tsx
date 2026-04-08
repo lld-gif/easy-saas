@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation"
+import { isAdmin } from "@/lib/admin"
 import { getAdminStats, getScrapeRuns, getTopTrendingThisWeek, getEstimatedCosts } from "@/lib/admin-queries"
 import { StatCard } from "@/components/admin/StatCard"
 import { BarChart } from "@/components/admin/BarChart"
@@ -10,6 +12,9 @@ import Link from "next/link"
 export const dynamic = "force-dynamic"
 
 export default async function AdminPage() {
+  const admin = await isAdmin()
+  if (!admin) redirect("/admin/login")
+
   const [stats, scrapeRuns, trending, costs] = await Promise.all([
     getAdminStats(),
     getScrapeRuns(20),
@@ -18,7 +23,21 @@ export default async function AdminPage() {
   ])
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-zinc-950">
+      <header className="border-b border-zinc-800 bg-zinc-900 px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-bold text-zinc-100">EasySaaS Admin</h1>
+            <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-xs font-medium text-orange-400">
+              Dashboard
+            </span>
+          </div>
+          <Link href="/" className="text-sm text-zinc-400 hover:text-zinc-200">
+            ← Back to site
+          </Link>
+        </div>
+      </header>
+      <div className="mx-auto max-w-7xl px-6 py-6 space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard label="Total Ideas" value={stats.total_ideas} accent="blue" />
@@ -106,6 +125,7 @@ export default async function AdminPage() {
           defaultDifficulty={stats.quality.default_difficulty}
         />
         <CostTracker byCost={costs.by_source} totalCost={costs.total_cost_30d} />
+      </div>
       </div>
     </div>
   )
