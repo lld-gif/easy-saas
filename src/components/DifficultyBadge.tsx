@@ -13,10 +13,10 @@ export function DifficultyBadge({ difficulty }: DifficultyBadgeProps) {
 
   return (
     <div className={`flex flex-col items-center border rounded-lg px-3 py-1.5 min-w-[3rem] ${color}`}>
-      <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-        <rect x="1" y="10" width="3" height="5" rx="0.5" opacity={bars >= 1 ? 1 : 0.2} />
-        <rect x="6.5" y="6" width="3" height="9" rx="0.5" opacity={bars >= 2 ? 1 : 0.2} />
-        <rect x="12" y="2" width="3" height="13" rx="0.5" opacity={bars >= 3 ? 1 : 0.2} />
+      <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="currentColor">
+        <rect x="1" y="9" width="2.5" height="4" rx="0.5" opacity={bars >= 1 ? 1 : 0.2} />
+        <rect x="5.5" y="6" width="2.5" height="7" rx="0.5" opacity={bars >= 2 ? 1 : 0.2} />
+        <rect x="10" y="3" width="2.5" height="10" rx="0.5" opacity={bars >= 3 ? 1 : 0.2} />
       </svg>
       <span className="text-[10px] font-semibold mt-0.5">{label}</span>
     </div>

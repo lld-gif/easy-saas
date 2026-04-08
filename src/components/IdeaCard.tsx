@@ -26,7 +26,7 @@ export function IdeaCard({ idea }: IdeaCardProps) {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0 space-y-2.5">
+        <CardContent className="pt-0 space-y-2.5 mt-auto">
           {/* Tags */}
           <div className="text-xs text-gray-400 flex items-center gap-1 min-w-0">
             <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
