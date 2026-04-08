@@ -3,15 +3,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { IdeaIcon } from "@/components/IdeaIcon"
 import { MentionBadge } from "@/components/MentionBadge"
 import { DifficultyBadge } from "@/components/DifficultyBadge"
-import { IdeaSignalsCompact } from "@/components/IdeaSignals"
 import type { Idea } from "@/types"
 
 interface IdeaCardProps {
   idea: Idea
-  popPercentile?: number
 }
 
-export function IdeaCard({ idea, popPercentile = 50 }: IdeaCardProps) {
+export function IdeaCard({ idea }: IdeaCardProps) {
   return (
     <Link href={`/ideas/${idea.slug}`}>
       <Card className="h-full hover:shadow-md border-gray-200 transition-all duration-200 cursor-pointer">
@@ -29,19 +27,24 @@ export function IdeaCard({ idea, popPercentile = 50 }: IdeaCardProps) {
           </div>
         </CardHeader>
         <CardContent className="pt-0 space-y-2.5">
-          {/* Signal bars */}
-          <IdeaSignalsCompact idea={idea} popPercentile={popPercentile} />
+          {/* Tags */}
+          <div className="text-xs text-gray-400 flex items-center gap-1 min-w-0">
+            <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+              <line x1="7" y1="7" x2="7.01" y2="7" />
+            </svg>
+            <span className="truncate">
+              {[idea.category.replace('-', '/'), ...idea.tags.slice(0, 2)].join(' · ')}
+            </span>
+          </div>
 
-          {/* Tags + badges */}
+          {/* Popularity + Difficulty + Mentions — aligned row */}
           <div className="flex items-center justify-between">
-            <div className="text-xs text-gray-400 flex items-center gap-1 min-w-0">
-              <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
-                <line x1="7" y1="7" x2="7.01" y2="7" />
+            <div className="flex items-center gap-1 text-xs text-orange-500">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 1.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12.2l-4.2 2.3.8-4.7L1.2 6.5l4.7-.7z" />
               </svg>
-              <span className="truncate">
-                {[idea.category.replace('-', '/'), ...idea.tags.slice(0, 2)].join(' · ')}
-              </span>
+              <span className="font-medium">{idea.popularity_score?.toFixed(1) ?? '—'}</span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <DifficultyBadge difficulty={idea.difficulty} />

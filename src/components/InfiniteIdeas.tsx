@@ -8,24 +8,12 @@ import { EmptyState } from "@/components/EmptyState"
 import type { Idea } from "@/types"
 import { createClient } from "@/lib/supabase/client"
 
-function getPercentile(score: number, sorted: number[]): number {
-  if (sorted.length === 0) return 50
-  let count = 0
-  for (const s of sorted) {
-    if (s < score) count++
-    else break
-  }
-  return Math.round((count / sorted.length) * 100)
-}
-
 interface InfiniteIdeasProps {
   initialIdeas: Idea[]
   initialCursor: string | null
   view: "card" | "list"
   hasFilters?: boolean
   hasCategory?: boolean
-  /** Sorted popularity scores for percentile calculation */
-  popScores?: number[]
 }
 
 const PAGE_SIZE = 24
@@ -36,7 +24,6 @@ export function InfiniteIdeas({
   view,
   hasFilters,
   hasCategory,
-  popScores = [],
 }: InfiniteIdeasProps) {
   const [ideas, setIdeas] = useState<Idea[]>(initialIdeas)
   const [cursor, setCursor] = useState<string | null>(initialCursor)
@@ -202,7 +189,6 @@ export function InfiniteIdeas({
               key={idea.id}
               idea={idea}
               rank={index + 1}
-              popPercentile={getPercentile(idea.popularity_score ?? 0, popScores)}
             />
           ))}
         </div>
@@ -212,7 +198,6 @@ export function InfiniteIdeas({
             <IdeaCard
               key={idea.id}
               idea={idea}
-              popPercentile={getPercentile(idea.popularity_score ?? 0, popScores)}
             />
           ))}
         </div>

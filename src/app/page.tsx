@@ -1,13 +1,12 @@
 import Link from "next/link"
 import { HeroSection } from "@/components/HeroSection"
 import { IdeaListRow } from "@/components/IdeaListRow"
-import { getTrendingIdeas, getIdeaCount, getAggregateStats, getPercentile } from "@/lib/queries"
+import { getTrendingIdeas, getIdeaCount } from "@/lib/queries"
 
 export default async function Home() {
-  const [trending, ideaCount, stats] = await Promise.all([
+  const [trending, ideaCount] = await Promise.all([
     getTrendingIdeas(12),
     getIdeaCount(),
-    getAggregateStats(),
   ])
 
   return (
@@ -30,7 +29,6 @@ export default async function Home() {
                   key={idea.id}
                   idea={idea}
                   rank={index + 1}
-                  popPercentile={getPercentile(idea.popularity_score ?? 0, stats.popularity_scores)}
                 />
               ))}
             </div>
