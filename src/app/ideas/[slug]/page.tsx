@@ -69,8 +69,26 @@ export default async function IdeaDetailPage({ params }: Props) {
   const mktPercentile = signalToPercentile(idea.market_signal)
   const revPercentile = revenueToPercentile(idea.revenue_potential)
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: idea.title,
+    description: idea.summary,
+    applicationCategory: idea.category,
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: idea.popularity_score.toFixed(1),
+      ratingCount: idea.mention_count,
+      bestRating: stats.popularity_scores.length > 0 ? Math.max(...stats.popularity_scores).toFixed(1) : "100",
+    },
+  }
+
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <nav className="mb-6 text-sm text-muted-foreground">
         <Link href="/ideas" className="hover:text-foreground">
           Ideas
