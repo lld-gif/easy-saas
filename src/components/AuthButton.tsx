@@ -38,6 +38,7 @@ export function AuthButton() {
   const signOut = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
+    setUser(null)
     router.refresh()
   }
 
