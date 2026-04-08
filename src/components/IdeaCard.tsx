@@ -3,13 +3,15 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { IdeaIcon } from "@/components/IdeaIcon"
 import { MentionBadge } from "@/components/MentionBadge"
 import { DifficultyBadge } from "@/components/DifficultyBadge"
+import { IdeaSignalsCompact } from "@/components/IdeaSignals"
 import type { Idea } from "@/types"
 
 interface IdeaCardProps {
   idea: Idea
+  popPercentile?: number
 }
 
-export function IdeaCard({ idea }: IdeaCardProps) {
+export function IdeaCard({ idea, popPercentile = 50 }: IdeaCardProps) {
   return (
     <Link href={`/ideas/${idea.slug}`}>
       <Card className="h-full hover:shadow-md border-gray-200 transition-all duration-200 cursor-pointer">
@@ -26,7 +28,11 @@ export function IdeaCard({ idea }: IdeaCardProps) {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 space-y-2.5">
+          {/* Signal bars */}
+          <IdeaSignalsCompact idea={idea} popPercentile={popPercentile} />
+
+          {/* Tags + badges */}
           <div className="flex items-center justify-between">
             <div className="text-xs text-gray-400 flex items-center gap-1 min-w-0">
               <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -38,16 +44,6 @@ export function IdeaCard({ idea }: IdeaCardProps) {
               </span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              {idea.market_signal === "strong" && (
-                <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700" title="Strong market signal">
-                  🔥
-                </span>
-              )}
-              {idea.competition_level === "low" && (
-                <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700" title="Low competition">
-                  💎
-                </span>
-              )}
               <DifficultyBadge difficulty={idea.difficulty} />
               <MentionBadge count={idea.mention_count} />
             </div>

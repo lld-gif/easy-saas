@@ -10,9 +10,21 @@ interface IdeaGridProps {
   view: "card" | "list"
   hasFilters?: boolean
   hasCategory?: boolean
+  /** Sorted popularity scores for percentile calculation */
+  popScores?: number[]
 }
 
-export function IdeaGrid({ ideas, view, hasFilters, hasCategory }: IdeaGridProps) {
+function getPercentile(score: number, sorted: number[]): number {
+  if (sorted.length === 0) return 50
+  let count = 0
+  for (const s of sorted) {
+    if (s < score) count++
+    else break
+  }
+  return Math.round((count / sorted.length) * 100)
+}
+
+export function IdeaGrid({ ideas, view, hasFilters, hasCategory, popScores = [] }: IdeaGridProps) {
   if (ideas.length === 0) {
     if (hasFilters) {
       return (
@@ -47,7 +59,12 @@ export function IdeaGrid({ ideas, view, hasFilters, hasCategory }: IdeaGridProps
     return (
       <div className="divide-y">
         {ideas.map((idea, index) => (
-          <IdeaListRow key={idea.id} idea={idea} rank={index + 1} />
+          <IdeaListRow
+            key={idea.id}
+            idea={idea}
+            rank={index + 1}
+            popPercentile={getPercentile(idea.popularity_score ?? 0, popScores)}
+          />
         ))}
       </div>
     )
@@ -56,7 +73,11 @@ export function IdeaGrid({ ideas, view, hasFilters, hasCategory }: IdeaGridProps
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {ideas.map((idea) => (
-        <IdeaCard key={idea.id} idea={idea} />
+        <IdeaCard
+          key={idea.id}
+          idea={idea}
+          popPercentile={getPercentile(idea.popularity_score ?? 0, popScores)}
+        />
       ))}
     </div>
   )
