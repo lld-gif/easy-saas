@@ -159,7 +159,7 @@ export default async function IdeaDetailPage({ params }: Props) {
             <SignalBar
               label="Competition"
               value={competitionLabels[idea.competition_level] || "Unknown"}
-              percentile={idea.competition_level === "low" ? 80 : idea.competition_level === "medium" ? 50 : idea.competition_level === "high" ? 20 : 0}
+              percentile={idea.competition_level === "low" ? 20 : idea.competition_level === "medium" ? 50 : idea.competition_level === "high" ? 80 : 0}
               color={competitionColors[idea.competition_level] || "gray"}
             />
           </div>
