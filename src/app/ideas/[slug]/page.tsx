@@ -179,7 +179,7 @@ export default async function IdeaDetailPage({ params }: Props) {
       </div>
 
       <Suspense fallback={null}>
-        <PackageSection ideaId={idea.id} />
+        <PackageSection ideaId={idea.id} ideaTitle={idea.title} />
       </Suspense>
     </main>
   )

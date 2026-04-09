@@ -39,23 +39,56 @@ export async function generatePackage(idea: {
   const brandKit = loadTemplate("brand-kit")
   const launchChecklist = loadTemplate(`launch-${tier}`)
 
-  const prompt = `For the SaaS idea "${idea.title}" (category: ${idea.category}, difficulty: ${idea.difficulty}/5):
-Summary: ${idea.summary}
+  const prompt = `You are a startup advisor helping indie hackers plan micro-SaaS products. Generate a detailed quick-start package for this idea.
 
-Return a JSON object with these fields:
+IDEA: "${idea.title}"
+CATEGORY: ${idea.category}
+DIFFICULTY: ${idea.difficulty}/5 (${tier})
+TAGS: ${idea.tags?.join(", ") || "none"}
+SUMMARY: ${idea.summary}
+
+Return a JSON object with ALL of these fields. Be specific and actionable — no generic filler.
+
 {
   "product_names": ["name1", "name2", "name3"],
-  "tagline": "under 10 words",
-  "mvp_features": ["feature 1", "feature 2", "feature 3", "feature 4", "feature 5"],
-  "data_model": "table1(col1, col2)\\ntable2(col1, col2, fk)\\ntable3(col1, col2)",
-  "pricing_tiers": [{"name": "Free", "price": "$0", "features": "basic features"}, {"name": "Pro", "price": "$X/mo", "features": "all features"}],
-  "colors": ["#hex1", "#hex2", "#hex3"],
+  "name_rationale": "Why these names work (memorable, available .com/.io likely, conveys the value)",
+  "tagline": "A punchy tagline under 10 words that explains the value prop",
+  "mvp_features": [
+    "Feature with specific detail — e.g. 'Dashboard showing weekly revenue trends with Stripe integration'",
+    "Feature 2 with enough detail to start building",
+    "Feature 3",
+    "Feature 4",
+    "Feature 5"
+  ],
+  "data_model": [
+    {"table": "users", "columns": [{"name": "id", "type": "uuid", "note": "primary key"}, {"name": "email", "type": "text", "note": "unique"}, {"name": "plan", "type": "text", "note": "free | pro"}]},
+    {"table": "table2", "columns": [{"name": "id", "type": "uuid", "note": "primary key"}, {"name": "user_id", "type": "uuid", "note": "FK → users"}, {"name": "col", "type": "text", "note": "description"}]}
+  ],
+  "pricing_tiers": [
+    {"name": "Free", "price": "$0/mo", "features": ["Specific free feature 1", "Specific free feature 2"], "limit": "Up to X items/users"},
+    {"name": "Pro", "price": "$X/mo", "features": ["Everything in Free", "Specific pro feature 1", "Specific pro feature 2"], "limit": "Unlimited"}
+  ],
+  "colors": [
+    {"hex": "#hex1", "role": "primary — buttons, CTAs, brand accent"},
+    {"hex": "#hex2", "role": "secondary — hover states, badges, highlights"},
+    {"hex": "#hex3", "role": "background accent — cards, section backgrounds"}
+  ],
+  "color_rationale": "Why this palette fits the ${idea.category} category and target audience",
   "font_pair": "Heading Font + Body Font",
-  "domains": ["domain1.com", "domain2.io"],
-  "distribution": ["channel 1 with brief explanation", "channel 2 with brief explanation"]
+  "font_rationale": "Why these fonts work together",
+  "domains": ["domain1.com", "domain2.io", "domain3.app"],
+  "distribution": [
+    {"channel": "Channel name", "tactic": "Specific action to take", "why": "Why this works for this idea"},
+    {"channel": "Channel 2", "tactic": "Specific tactic", "why": "Reasoning"},
+    {"channel": "Channel 3", "tactic": "Specific tactic", "why": "Reasoning"}
+  ],
+  "target_audience": "Specific description of who would pay for this — job title, pain point, current workaround",
+  "competitive_edge": "What makes this idea defensible or unique vs existing solutions"
 }
 
-Return ONLY valid JSON.`
+IMPORTANT: The data_model should have 3-5 tables with realistic columns and types (uuid, text, integer, boolean, timestamptz, jsonb). Include foreign key relationships. The tables should reflect what's actually needed for the MVP features listed.
+
+Return ONLY valid JSON. No markdown, no explanation.`
 
   let fillData: any
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -63,7 +96,7 @@ Return ONLY valid JSON.`
       if (attempt > 0) await new Promise((r) => setTimeout(r, 2000))
       const response = await getAnthropic().messages.create({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 1024,
+        max_tokens: 2048,
         messages: [{ role: "user", content: prompt }],
       })
       const text = response.content[0].type === "text" ? response.content[0].text : ""
@@ -76,30 +109,99 @@ Return ONLY valid JSON.`
     }
   }
 
+  // Format data model — handle both old string format and new structured format
+  let dataModelStr = "To be designed"
+  if (Array.isArray(fillData.data_model)) {
+    dataModelStr = fillData.data_model
+      .map((t: any) => {
+        const cols = (t.columns || [])
+          .map((c: any) => `  - \`${c.name}\` ${c.type}${c.note ? ` — ${c.note}` : ""}`)
+          .join("\n")
+        return `### ${t.table}\n${cols}`
+      })
+      .join("\n\n")
+  } else if (typeof fillData.data_model === "string") {
+    dataModelStr = fillData.data_model.replace(/\\n/g, "\n")
+  }
+
+  // Format colors — handle both old array-of-strings and new structured format
+  let colorsStr = ""
+  if (Array.isArray(fillData.colors) && fillData.colors.length > 0) {
+    if (typeof fillData.colors[0] === "object") {
+      colorsStr = fillData.colors.map((c: any) => `- \`${c.hex}\` — ${c.role}`).join("\n")
+    } else {
+      colorsStr = (fillData.colors as string[]).join(", ")
+    }
+  }
+  if (fillData.color_rationale) {
+    colorsStr += `\n\n*${fillData.color_rationale}*`
+  }
+
+  // Format pricing — handle both old and new format
+  const formatPricing = (tiers: any[]) => {
+    return tiers.map((t: any) => {
+      const features = Array.isArray(t.features) ? t.features.join(", ") : t.features
+      const limit = t.limit ? ` (${t.limit})` : ""
+      return `- **${t.name}** (${t.price}): ${features}${limit}`
+    }).join("\n")
+  }
+
+  // Format distribution — handle both old string and new structured format
+  const formatDistribution = (dist: any[]) => {
+    return dist.map((d: any) => {
+      if (typeof d === "string") return `- ${d}`
+      return `- **${d.channel}:** ${d.tactic}${d.why ? ` — *${d.why}*` : ""}`
+    }).join("\n")
+  }
+
   const mergedTechSpec = techSpec
     .replace("{{IDEA_TITLE}}", idea.title)
-    .replace("{{DATA_MODEL}}", fillData.data_model?.replace(/\\n/g, "\n") || "To be designed")
+    .replace("{{DATA_MODEL}}", dataModelStr)
     .replace("{{MVP_FEATURES}}", (fillData.mvp_features || []).map((f: string, i: number) => `${i + 1}. ${f}`).join("\n"))
+    .replace("{{TARGET_AUDIENCE}}", fillData.target_audience || "")
+    .replace("{{COMPETITIVE_EDGE}}", fillData.competitive_edge || "")
 
   const mergedBrandKit = brandKit
     .replace("{{IDEA_TITLE}}", idea.title)
-    .replace("{{PRODUCT_NAMES}}", (fillData.product_names || []).map((n: string) => `- **${n}**`).join("\n"))
+    .replace("{{PRODUCT_NAMES}}", (fillData.product_names || []).map((n: string, i: number) => `${i + 1}. **${n}**`).join("\n"))
+    .replace("{{NAME_RATIONALE}}", fillData.name_rationale || "")
     .replace("{{TAGLINE}}", fillData.tagline || "")
-    .replace("{{COLORS}}", (fillData.colors || []).join(", "))
+    .replace("{{COLORS}}", colorsStr)
     .replace("{{FONT_PAIR}}", fillData.font_pair || "Inter + Inter")
+    .replace("{{FONT_RATIONALE}}", fillData.font_rationale || "")
     .replace("{{DOMAINS}}", (fillData.domains || []).join(", "))
 
   const mergedLaunch = launchChecklist
     .replace("{{IDEA_TITLE}}", idea.title)
     .replace("{{MVP_FEATURES}}", (fillData.mvp_features || []).map((f: string) => `- [ ] ${f}`).join("\n"))
-    .replace("{{PRICING_TIERS}}", (fillData.pricing_tiers || []).map((t: any) => `- **${t.name}** (${t.price}): ${t.features}`).join("\n"))
-    .replace("{{DISTRIBUTION}}", (fillData.distribution || []).map((d: string) => `- ${d}`).join("\n"))
+    .replace("{{PRICING_TIERS}}", formatPricing(fillData.pricing_tiers || []))
+    .replace("{{DISTRIBUTION}}", formatDistribution(fillData.distribution || []))
+    .replace("{{TARGET_AUDIENCE}}", fillData.target_audience || "")
+
+  // Build the unified copy-ready document
+  const fullPackage = `# ${idea.title} — Quick Start Package
+
+> Generated by [Vibe Code Ideas](https://vibecodeideas.ai). Paste this into Claude, Cursor, Codex, or any AI coding assistant to start building.
+
+---
+
+${mergedTechSpec}
+
+---
+
+${mergedBrandKit}
+
+---
+
+${mergedLaunch}
+`.trim()
 
   return {
     fill_data: fillData,
     tech_spec: mergedTechSpec,
     brand_kit: mergedBrandKit,
     launch_checklist: mergedLaunch,
+    full_package: fullPackage,
     generated_at: new Date().toISOString(),
   }
 }
