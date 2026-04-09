@@ -43,9 +43,17 @@ export function AuthButton() {
   }
 
   const manageSubscription = async () => {
-    const res = await fetch("/api/stripe/portal", { method: "POST" })
-    const { url } = await res.json()
-    if (url) window.location.href = url
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        alert(data.error || "Unable to open billing portal. Please contact support.")
+      }
+    } catch {
+      alert("Something went wrong. Please try again.")
+    }
   }
 
   if (loading) return null
