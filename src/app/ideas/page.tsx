@@ -10,7 +10,8 @@ import { parseSearchParams } from "@/lib/utils"
 
 export const metadata: Metadata = {
   title: "Browse SaaS Ideas — Vibe Code Ideas",
-  description: "Search and filter hundreds of validated SaaS ideas from across the internet.",
+  description:
+    "Search and filter 500+ validated micro-SaaS ideas on Vibe Code Ideas. Filter by category (Fintech, DevTools, AI/ML, and more), difficulty level, and trending popularity. Each idea includes demand signals and Pro users get full tech specs and launch checklists.",
 }
 
 interface Props {
