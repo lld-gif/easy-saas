@@ -13,12 +13,12 @@ export function TrendingSidebar({ ideas }: Props) {
   return (
     <aside className="w-72 shrink-0 hidden lg:block">
       <div className="sticky top-24 space-y-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 mb-4">
             <svg className="w-4 h-4 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
-            <h3 className="text-sm font-semibold text-gray-900">Trending Now</h3>
+            <h3 className="text-sm font-semibold text-foreground">Trending Now</h3>
           </div>
 
           <div className="space-y-3">
@@ -34,14 +34,14 @@ export function TrendingSidebar({ ideas }: Props) {
                     {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-800 group-hover:text-indigo-600 transition-colors line-clamp-2 leading-snug">
+                    <p className="text-sm font-medium text-foreground group-hover:text-indigo-600 transition-colors line-clamp-2 leading-snug">
                       {idea.title}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${cat.color}`}>
                         {cat.label}
                       </span>
-                      <span className="text-[10px] text-gray-400">
+                      <span className="text-[10px] text-muted-foreground">
                         {displayMentions(idea.mention_count)} mentions
                       </span>
                     </div>

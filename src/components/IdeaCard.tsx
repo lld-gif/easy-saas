@@ -39,14 +39,14 @@ export function IdeaCard({ idea }: IdeaCardProps) {
           </div>
 
           {/* Popularity + Difficulty + Mentions — aligned row */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1 text-xs text-orange-500">
               <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M8 1.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12.2l-4.2 2.3.8-4.7L1.2 6.5l4.7-.7z" />
               </svg>
               <span className="font-medium">{idea.popularity_score?.toFixed(1) ?? '—'}</span>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
               <DifficultyBadge difficulty={idea.difficulty} />
               <MentionBadge count={idea.mention_count} />
             </div>

@@ -24,17 +24,17 @@ export function HeroSection({ ideaCount }: HeroSectionProps) {
 
   return (
     <section className="py-16 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12">
+      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
         {/* Left: Copy */}
         <div className="flex-1 text-center lg:text-left">
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground">
             Crowdsourced<br />
             <span className="text-orange-500">shower ideas</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-lg">
             AI-curated SaaS ideas spotted across the internet. Ranked by demand signals. Ready to build.
           </p>
-          <form onSubmit={handleSearch} className="mt-6 flex max-w-md gap-2">
+          <form onSubmit={handleSearch} className="mt-6 flex flex-col sm:flex-row max-w-md gap-2 mx-auto lg:mx-0">
             <Input
               placeholder="Search ideas..."
               value={query}

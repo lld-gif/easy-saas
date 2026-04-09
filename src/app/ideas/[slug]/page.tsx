@@ -98,12 +98,12 @@ export default async function IdeaDetailPage({ params }: Props) {
         <span>{idea.title}</span>
       </nav>
 
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <h1 className="text-3xl font-bold">{idea.title}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">{idea.title}</h1>
         <MentionBadge count={idea.mention_count} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-8">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 mb-8">
         <CategoryBadge category={idea.category} />
         <DifficultyBadge difficulty={idea.difficulty} />
         {idea.tags.map((tag) => (
@@ -124,7 +124,7 @@ export default async function IdeaDetailPage({ params }: Props) {
           Indexed against {stats.total} ideas in the database
         </p>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-3 sm:gap-5 sm:grid-cols-2">
           {/* Popularity Score */}
           <div>
             <SignalBar

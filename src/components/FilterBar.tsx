@@ -53,7 +53,7 @@ export function FilterBar() {
             key={cat.slug}
             onClick={() => setFilter("category", cat.slug)}
             className={cn(
-              "px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-[1px]",
+              "px-3 py-2 sm:px-4 sm:py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-[1px]",
               (activeCategory === cat.slug || (cat.slug === "" && !activeCategory))
                 ? "border-orange-500 text-orange-500"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-input"
@@ -65,7 +65,7 @@ export function FilterBar() {
       </div>
 
       {/* Sort + Difficulty row */}
-      <div className="flex items-center gap-6 flex-wrap">
+      <div className="flex items-center gap-3 sm:gap-6 flex-wrap">
         {/* Sort */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Sort:</span>

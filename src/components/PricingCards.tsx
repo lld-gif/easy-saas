@@ -46,9 +46,9 @@ export function PricingCards() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mt-8">
         {/* Free tier */}
-        <div className="border border-border rounded-xl p-8 bg-card">
+        <div className="border border-border rounded-xl p-4 sm:p-6 md:p-8 bg-card">
           <h2 className="text-xl font-bold text-foreground">Free</h2>
           <p className="text-3xl font-bold mt-2 text-foreground">$0</p>
           <p className="text-sm text-muted-foreground mt-1">Forever free</p>
@@ -67,7 +67,7 @@ export function PricingCards() {
         </div>
 
         {/* Pro tier */}
-        <div className="border-2 border-orange-500 rounded-xl p-8 relative bg-card">
+        <div className="border-2 border-orange-500 rounded-xl p-4 sm:p-6 md:p-8 relative bg-card">
           <span className="absolute -top-3 left-6 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
             RECOMMENDED
           </span>

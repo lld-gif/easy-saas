@@ -29,7 +29,7 @@ export default async function IdeasPage({ searchParams }: Props) {
     <main className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">Browse Ideas</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Suspense fallback={null}>
             <SearchBar />
           </Suspense>
@@ -43,7 +43,7 @@ export default async function IdeasPage({ searchParams }: Props) {
         <FilterBar />
       </Suspense>
 
-      <div className="mt-6 flex gap-8">
+      <div className="mt-6 flex gap-4 lg:gap-8">
         {/* Main content */}
         <div className="flex-1 min-w-0">
           <Suspense fallback={null}>

@@ -25,7 +25,7 @@ export function ShareButtons({ title, summary }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false)
 
   return (
-    <div className="flex items-center gap-3 mb-8">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-8">
       <span className="text-sm font-medium text-muted-foreground">Share:</span>
 
       <a

@@ -13,10 +13,10 @@ export function IdeaListRow({ idea, rank }: IdeaListRowProps) {
   return (
     <Link
       href={`/ideas/${idea.slug}`}
-      className="group flex items-center gap-4 px-4 py-5 border-b border-border/50 transition-colors hover:bg-muted/30"
+      className="group flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-4 sm:py-5 border-b border-border/50 transition-colors hover:bg-muted/30"
     >
       {/* Rank */}
-      <span className="text-lg font-bold text-muted-foreground/50 w-8 text-right shrink-0 tabular-nums">
+      <span className="text-base sm:text-lg font-bold text-muted-foreground/50 w-6 sm:w-8 text-right shrink-0 tabular-nums">
         {rank}
       </span>
 

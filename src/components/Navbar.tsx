@@ -1,7 +1,12 @@
+"use client"
+
+import { useState } from "react"
 import Link from "next/link"
 import { AuthButton } from "@/components/AuthButton"
 
 export function Navbar() {
+  const [menuOpen, setMenuOpen] = useState(false)
+
   return (
     <nav className="border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -15,7 +20,9 @@ export function Navbar() {
             </svg>
             <span><span className="text-orange-500">Vibe</span><span className="text-foreground">Code Ideas</span></span>
           </Link>
-          <div className="flex items-center gap-4">
+
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-4">
             <Link href="/ideas" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Browse Ideas
             </Link>
@@ -27,8 +34,59 @@ export function Navbar() {
             </Link>
             <AuthButton />
           </div>
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Toggle menu"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {menuOpen ? (
+                <path d="M18 6L6 18M6 6l12 12" />
+              ) : (
+                <>
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </>
+              )}
+            </svg>
+          </button>
         </div>
       </div>
+
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="md:hidden border-t border-border bg-background">
+          <div className="px-4 py-3 space-y-1">
+            <Link
+              href="/ideas"
+              onClick={() => setMenuOpen(false)}
+              className="block px-3 py-2.5 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              Browse Ideas
+            </Link>
+            <Link
+              href="/blog"
+              onClick={() => setMenuOpen(false)}
+              className="block px-3 py-2.5 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              Blog
+            </Link>
+            <Link
+              href="/pricing"
+              onClick={() => setMenuOpen(false)}
+              className="block px-3 py-2.5 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              Pricing
+            </Link>
+            <div className="px-3 py-2.5 border-t border-border mt-2 pt-3">
+              <AuthButton mobile onAction={() => setMenuOpen(false)} />
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   )
 }

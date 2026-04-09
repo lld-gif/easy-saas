@@ -53,7 +53,7 @@ export function NewsletterSignup() {
   return (
     <div className="text-center py-8">
       <h3 className="text-lg font-semibold mb-2">Get the best ideas in your inbox</h3>
-      <form onSubmit={handleSubmit} className="flex items-center justify-center gap-2 max-w-md mx-auto">
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 max-w-md mx-auto">
         <input
           type="email"
           placeholder="you@example.com"

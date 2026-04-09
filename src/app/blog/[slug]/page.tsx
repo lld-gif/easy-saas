@@ -52,7 +52,7 @@ export default async function BlogPostPage({ params }: Props) {
             year: "numeric",
           })}
         </time>
-        <h1 className="text-3xl font-bold mt-2 mb-8">{post.title}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mt-2 mb-8">{post.title}</h1>
 
         <div className="prose prose-gray max-w-none prose-headings:font-semibold prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4 prose-h3:text-lg prose-p:leading-relaxed prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-table:text-sm">
           {post.content.split("\n\n").map((block, i) => {
@@ -73,7 +73,8 @@ export default async function BlogPostPage({ params }: Props) {
               const headers = rows[0]?.split("|").map((c) => c.trim()).filter(Boolean)
               const body = rows.slice(1).map((r) => r.split("|").map((c) => c.trim()).filter(Boolean))
               return (
-                <table key={i} className="w-full my-6">
+                <div key={i} className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                <table className="w-full my-6">
                   <thead>
                     <tr>
                       {headers?.map((h, j) => (
@@ -95,13 +96,14 @@ export default async function BlogPostPage({ params }: Props) {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )
             }
             // Lists
             if (block.match(/^- /m)) {
               const items = block.split("\n").filter((l) => l.startsWith("- "))
               return (
-                <ul key={i} className="list-disc pl-6 space-y-1 my-4">
+                <ul key={i} className="list-disc pl-4 sm:pl-6 space-y-1 my-4">
                   {items.map((item, j) => (
                     <li key={j}>
                       <span dangerouslySetInnerHTML={{ __html: inlineMarkdown(item.replace(/^- /, "")) }} />
