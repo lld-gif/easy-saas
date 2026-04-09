@@ -4,7 +4,8 @@ import { SearchBar } from "@/components/SearchBar"
 import { FilterBar } from "@/components/FilterBar"
 import { ViewToggle } from "@/components/ViewToggle"
 import { InfiniteIdeas } from "@/components/InfiniteIdeas"
-import { getIdeas } from "@/lib/queries"
+import { TrendingSidebar } from "@/components/TrendingSidebar"
+import { getIdeas, getTrendingIdeas } from "@/lib/queries"
 import { parseSearchParams } from "@/lib/utils"
 
 export const metadata: Metadata = {
@@ -19,10 +20,13 @@ interface Props {
 export default async function IdeasPage({ searchParams }: Props) {
   const params = await searchParams
   const filters = parseSearchParams(params)
-  const { ideas, nextCursor } = await getIdeas(filters)
+  const [{ ideas, nextCursor }, trending] = await Promise.all([
+    getIdeas(filters),
+    getTrendingIdeas(10),
+  ])
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-8">
+    <main className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">Browse Ideas</h1>
         <div className="flex items-center gap-3">
@@ -39,16 +43,22 @@ export default async function IdeasPage({ searchParams }: Props) {
         <FilterBar />
       </Suspense>
 
-      <div className="mt-6">
-        <Suspense fallback={null}>
-          <InfiniteIdeas
-            initialIdeas={ideas}
-            initialCursor={nextCursor}
-            view={filters.view ?? "card"}
-            hasFilters={!!(filters.q || filters.popularity || filters.time)}
-            hasCategory={!!filters.category}
-          />
-        </Suspense>
+      <div className="mt-6 flex gap-8">
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          <Suspense fallback={null}>
+            <InfiniteIdeas
+              initialIdeas={ideas}
+              initialCursor={nextCursor}
+              view={filters.view ?? "card"}
+              hasFilters={!!(filters.q || filters.popularity || filters.time)}
+              hasCategory={!!filters.category}
+            />
+          </Suspense>
+        </div>
+
+        {/* Trending sidebar */}
+        <TrendingSidebar ideas={trending} />
       </div>
     </main>
   )

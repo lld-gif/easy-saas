@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
-import type { ScrapeRun } from "@/types"
+import type { Idea, ScrapeRun } from "@/types"
 
 function getServiceClient() {
   return createClient(
@@ -168,4 +168,170 @@ export async function getEstimatedCosts() {
   const totalCost = byCost.reduce((sum, r) => sum + r.estimated_cost, 0)
 
   return { by_source: byCost, total_cost_30d: Math.round(totalCost * 100) / 100 }
+}
+
+// ─── Ideas Management ──────────────────────────────────────────
+
+export interface AdminIdeasParams {
+  page?: number
+  pageSize?: number
+  search?: string
+  status?: string
+  category?: string
+  sort?: string
+  direction?: "asc" | "desc"
+}
+
+export async function getAdminIdeas(params: AdminIdeasParams = {}) {
+  const supabase = getServiceClient()
+  const {
+    page = 1,
+    pageSize = 50,
+    search,
+    status,
+    category,
+    sort = "created_at",
+    direction = "desc",
+  } = params
+
+  let query = supabase
+    .from("ideas")
+    .select("*", { count: "exact" })
+
+  if (search) {
+    query = query.or(`title.ilike.%${search}%,summary.ilike.%${search}%`)
+  }
+  if (status && status !== "all") {
+    query = query.eq("status", status)
+  }
+  if (category && category !== "all") {
+    query = query.eq("category", category)
+  }
+
+  query = query.order(sort, { ascending: direction === "asc" })
+
+  const from = (page - 1) * pageSize
+  query = query.range(from, from + pageSize - 1)
+
+  const { data, count, error } = await query
+
+  if (error) {
+    console.error("Failed to fetch admin ideas:", error)
+    return { ideas: [] as Idea[], total: 0 }
+  }
+
+  return { ideas: (data || []) as Idea[], total: count || 0 }
+}
+
+export async function getIdeaCategories(): Promise<string[]> {
+  const supabase = getServiceClient()
+  const { data } = await supabase
+    .from("ideas")
+    .select("category")
+
+  const categories = new Set<string>()
+  for (const row of data || []) {
+    if (row.category) categories.add(row.category)
+  }
+  return Array.from(categories).sort()
+}
+
+export async function updateIdeaStatus(id: string, status: string) {
+  const supabase = getServiceClient()
+  const { error } = await supabase
+    .from("ideas")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", id)
+
+  if (error) throw new Error(error.message)
+}
+
+export async function updateIdea(id: string, data: Partial<Idea>) {
+  const supabase = getServiceClient()
+  const { error } = await supabase
+    .from("ideas")
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq("id", id)
+
+  if (error) throw new Error(error.message)
+}
+
+export async function bulkUpdateIdeaStatus(ids: string[], status: string) {
+  const supabase = getServiceClient()
+  const { error } = await supabase
+    .from("ideas")
+    .update({ status, updated_at: new Date().toISOString() })
+    .in("id", ids)
+
+  if (error) throw new Error(error.message)
+}
+
+export async function deleteIdeas(ids: string[]) {
+  const supabase = getServiceClient()
+  // Delete sources first (FK constraint)
+  await supabase.from("idea_sources").delete().in("idea_id", ids)
+  const { error } = await supabase.from("ideas").delete().in("id", ids)
+  if (error) throw new Error(error.message)
+}
+
+// ─── Users Management ──────────────────────────────────────────
+
+export interface AdminUser {
+  id: string
+  email: string
+  subscription_status: string
+  stripe_customer_id: string | null
+  created_at: string
+  package_count: number
+}
+
+export async function getAdminUsers(params: { page?: number; pageSize?: number; search?: string } = {}) {
+  const supabase = getServiceClient()
+  const { page = 1, pageSize = 50, search } = params
+
+  let query = supabase
+    .from("users")
+    .select("*", { count: "exact" })
+
+  if (search) {
+    query = query.ilike("email", `%${search}%`)
+  }
+
+  query = query.order("created_at", { ascending: false })
+
+  const from = (page - 1) * pageSize
+  query = query.range(from, from + pageSize - 1)
+
+  const { data, count, error } = await query
+
+  if (error) {
+    console.error("Failed to fetch admin users:", error)
+    return { users: [] as AdminUser[], total: 0 }
+  }
+
+  // Get package generation counts per user
+  const userIds = (data || []).map((u: any) => u.id)
+  let packageCounts = new Map<string, number>()
+
+  if (userIds.length > 0) {
+    const { data: packages } = await supabase
+      .from("idea_packages")
+      .select("user_id")
+      .in("user_id", userIds)
+
+    for (const pkg of packages || []) {
+      packageCounts.set(pkg.user_id, (packageCounts.get(pkg.user_id) || 0) + 1)
+    }
+  }
+
+  const users: AdminUser[] = (data || []).map((u: any) => ({
+    id: u.id,
+    email: u.email,
+    subscription_status: u.subscription_status || "free",
+    stripe_customer_id: u.stripe_customer_id,
+    created_at: u.created_at,
+    package_count: packageCounts.get(u.id) || 0,
+  }))
+
+  return { users, total: count || 0 }
 }

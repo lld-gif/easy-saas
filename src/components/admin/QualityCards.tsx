@@ -17,9 +17,9 @@ function QualityItem({
 }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0
   const colors = {
-    low: "text-green-400 bg-green-500/10",
-    medium: "text-yellow-400 bg-yellow-500/10",
-    high: "text-red-400 bg-red-500/10",
+    low: "text-green-700 bg-green-50",
+    medium: "text-yellow-700 bg-yellow-50",
+    high: "text-red-700 bg-red-50",
   }
   const severityLevel = pct > 50 ? "high" : pct > 25 ? "medium" : "low"
 
@@ -36,8 +36,8 @@ function QualityItem({
 
 export function QualityCards({ totalIdeas, missingEnrichment, lowMentions, defaultDifficulty }: QualityCardsProps) {
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-      <h3 className="mb-4 text-sm font-semibold text-zinc-300">Data Quality</h3>
+    <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <h3 className="mb-4 text-sm font-semibold text-gray-700">Data Quality</h3>
       <div className="space-y-2">
         <QualityItem
           label="Missing enrichment data"
