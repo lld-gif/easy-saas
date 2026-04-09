@@ -100,6 +100,9 @@ export function PricingCards() {
             ))}
           </ul>
           <UpgradeButton plan={billing} className="w-full mt-8" />
+          <p className="text-xs text-muted-foreground text-center mt-3">
+            Cancel anytime. No refunds on generated packages.
+          </p>
         </div>
       </div>
     </>
