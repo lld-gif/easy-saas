@@ -166,7 +166,7 @@ export function PackageSection({ ideaId, ideaTitle }: PackageSectionProps) {
         <h2 className="text-xl font-bold mb-4">Quick Start Package</h2>
         <BlurredPreview />
         <div className="text-center mt-4">
-          <p className="text-sm text-muted-foreground mb-3">Sign in to unlock the full package</p>
+          <p className="text-sm text-muted-foreground mb-3">Sign in to get started — Pro members get the full package</p>
           <Button variant="outline" onClick={async () => {
             const supabase = createClient()
             await supabase.auth.signInWithOAuth({
