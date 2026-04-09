@@ -1,7 +1,6 @@
-import fs from "fs"
-import path from "path"
 import Anthropic from "@anthropic-ai/sdk"
 import { createClient } from "@supabase/supabase-js"
+import { loadTemplate } from "@/lib/templates"
 
 function getServiceClient() {
   return createClient(
@@ -18,11 +17,6 @@ function getDifficultyTier(d: number): "easy" | "medium" | "hard" {
   if (d <= 2) return "easy"
   if (d <= 3) return "medium"
   return "hard"
-}
-
-function loadTemplate(name: string): string {
-  const filePath = path.join(process.cwd(), "src", "templates", `${name}.md`)
-  return fs.readFileSync(filePath, "utf-8")
 }
 
 export async function generatePackage(idea: {
