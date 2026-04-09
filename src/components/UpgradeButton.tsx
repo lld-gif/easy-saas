@@ -19,11 +19,18 @@ export function UpgradeButton({ plan = "monthly", className }: UpgradeButtonProp
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       })
-      const { url, error } = await res.json()
-      if (url) window.location.href = url
-      else console.error("No checkout URL:", error)
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else if (res.status === 401) {
+        // Not signed in — redirect to sign in first
+        window.location.href = "/pricing?signin=true"
+      } else {
+        alert(data.error || "Something went wrong. Please try again.")
+      }
     } catch (e) {
       console.error("Checkout failed:", e)
+      alert("Something went wrong. Please try again.")
     } finally {
       setLoading(false)
     }
