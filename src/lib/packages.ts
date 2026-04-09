@@ -99,7 +99,11 @@ Return ONLY valid JSON. No markdown, no explanation.`
       const text = response.content[0].type === "text" ? response.content[0].text : ""
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error("No JSON in response")
-      fillData = JSON.parse(jsonMatch[0])
+      // Clean common LLM JSON issues: trailing commas before ] or }
+      const cleaned = jsonMatch[0]
+        .replace(/,\s*([}\]])/g, "$1")  // trailing commas
+        .replace(/[\x00-\x1f]/g, (ch) => ch === "\n" || ch === "\r" || ch === "\t" ? ch : "") // control chars
+      fillData = JSON.parse(cleaned)
       break
     } catch (e) {
       lastError = e
