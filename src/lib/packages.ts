@@ -92,17 +92,36 @@ Return ONLY valid JSON. No markdown, no explanation.`
       console.log(`[generate] attempt ${attempt + 1}, model: claude-haiku-4-5-20251001, idea: ${idea.id}`)
       const response = await getAnthropic().messages.create({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 2048,
+        max_tokens: 4096,
         messages: [{ role: "user", content: prompt }],
       })
-      console.log(`[generate] API response received, stop_reason: ${response.stop_reason}`)
+      console.log(`[generate] API response received, stop_reason: ${response.stop_reason}, tokens: ${response.usage?.output_tokens}`)
       const text = response.content[0].type === "text" ? response.content[0].text : ""
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      const jsonMatch = text.match(/\{[\s\S]*/)
       if (!jsonMatch) throw new Error("No JSON in response")
-      // Clean common LLM JSON issues: trailing commas before ] or }
-      const cleaned = jsonMatch[0]
+      // Clean and repair common LLM JSON issues
+      let cleaned = jsonMatch[0]
         .replace(/,\s*([}\]])/g, "$1")  // trailing commas
         .replace(/[\x00-\x1f]/g, (ch) => ch === "\n" || ch === "\r" || ch === "\t" ? ch : "") // control chars
+      // Close any unclosed brackets/braces (truncated output)
+      let openBraces = 0, openBrackets = 0
+      let inString = false, escaped = false
+      for (const ch of cleaned) {
+        if (escaped) { escaped = false; continue }
+        if (ch === "\\") { escaped = true; continue }
+        if (ch === '"') { inString = !inString; continue }
+        if (inString) continue
+        if (ch === "{") openBraces++
+        else if (ch === "}") openBraces--
+        else if (ch === "[") openBrackets++
+        else if (ch === "]") openBrackets--
+      }
+      // Trim any trailing incomplete key-value pair
+      cleaned = cleaned.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, "")
+      for (let i = 0; i < openBrackets; i++) cleaned += "]"
+      for (let i = 0; i < openBraces; i++) cleaned += "}"
+      // Final trailing comma cleanup after repair
+      cleaned = cleaned.replace(/,\s*([}\]])/g, "$1")
       fillData = JSON.parse(cleaned)
       break
     } catch (e) {
