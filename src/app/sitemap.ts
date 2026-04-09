@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
 import { createClient } from "@/lib/supabase/server"
+import { CATEGORIES } from "@/lib/categories"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient()
@@ -16,6 +17,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
+  const categoryEntries: MetadataRoute.Sitemap = CATEGORIES.map((cat) => ({
+    url: `https://vibecodeideas.ai/ideas/category/${cat.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }))
+
+  const difficultyEntries: MetadataRoute.Sitemap = (
+    ["easy", "medium", "hard"] as const
+  ).map((level) => ({
+    url: `https://vibecodeideas.ai/ideas/difficulty/${level}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }))
+
   return [
     {
       url: "https://vibecodeideas.ai",
@@ -30,10 +47,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      url: "https://vibecodeideas.ai/ideas/trending",
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.8,
+    },
+    {
       url: "https://vibecodeideas.ai/pricing",
       changeFrequency: "monthly",
       priority: 0.5,
     },
+    ...categoryEntries,
+    ...difficultyEntries,
     ...ideaEntries,
   ]
 }
