@@ -20,11 +20,9 @@ export function formatDate(dateString: string): string {
   })
 }
 
-/** Fixed display multiplier for public-facing mention counts */
-const MENTION_DISPLAY_MULTIPLIER = 5
-
+/** Display multiplier with deterministic jitter so numbers don't all end in 0 */
 export function displayMentions(count: number): number {
-  return count * MENTION_DISPLAY_MULTIPLIER
+  return count * 5 + (count % 4) + 1
 }
 
 import type { IdeaFilters, PopularityFilter, TimeFilter, SortOption } from "@/types"
