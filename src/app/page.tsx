@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { HeroSection } from "@/components/HeroSection"
 import { IdeaListRow } from "@/components/IdeaListRow"
-import { NewsletterSignup } from "@/components/NewsletterSignup"
+
 import { getTrendingIdeas, getIdeaCount } from "@/lib/queries"
 import { CATEGORIES } from "@/lib/categories"
 
@@ -63,12 +63,6 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Newsletter signup */}
-      <section className="py-8 px-4">
-        <div className="max-w-6xl mx-auto border-t border-border pt-8">
-          <NewsletterSignup />
-        </div>
-      </section>
     </main>
   )
 }
