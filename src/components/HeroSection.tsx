@@ -28,8 +28,8 @@ export function HeroSection({ ideaCount }: HeroSectionProps) {
         {/* Left: Copy */}
         <div className="flex-1 text-center lg:text-left">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground">
-            Find your next<br />
-            <span className="text-orange-500 dark:text-orange-400">billion-dollar</span> idea
+            Crowdsourced<br />
+            <span className="text-orange-500 dark:text-orange-400">shower ideas</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-lg">
             AI-curated SaaS ideas spotted across the internet. Ranked by demand signals. Ready to build.
