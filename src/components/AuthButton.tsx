@@ -77,16 +77,16 @@ export function AuthButton() {
       {status === "pro" ? (
         <>
           <span className="text-xs font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">PRO</span>
-          <button onClick={manageSubscription} className="text-xs text-muted-foreground hover:text-foreground">
+          <button onClick={manageSubscription} className="text-sm text-muted-foreground hover:text-foreground font-medium transition-colors">
             Manage
           </button>
         </>
       ) : (
-        <a href="/pricing" className="text-xs font-medium bg-orange-500 text-white px-3 py-1 rounded-full hover:bg-orange-600 transition-colors">
+        <a href="/pricing" className="text-sm font-medium bg-orange-500 text-white px-3 py-1 rounded-full hover:bg-orange-600 transition-colors">
           Upgrade
         </a>
       )}
-      <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground">
+      <button onClick={signOut} className="text-sm text-muted-foreground hover:text-foreground font-medium transition-colors">
         Sign out
       </button>
     </div>
