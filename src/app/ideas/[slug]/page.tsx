@@ -18,7 +18,7 @@ import {
   revenueToPercentile,
   revenueToColor,
 } from "@/lib/signal-utils"
-import { formatDate } from "@/lib/utils"
+import { formatDate, displayMentions } from "@/lib/utils"
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -78,7 +78,7 @@ export default async function IdeaDetailPage({ params }: Props) {
     aggregateRating: {
       "@type": "AggregateRating",
       ratingValue: idea.popularity_score.toFixed(1),
-      ratingCount: idea.mention_count,
+      ratingCount: displayMentions(idea.mention_count),
       bestRating: stats.popularity_scores.length > 0 ? Math.max(...stats.popularity_scores).toFixed(1) : "100",
     },
   }
@@ -170,7 +170,7 @@ export default async function IdeaDetailPage({ params }: Props) {
       <div className="rounded-lg border border-border bg-card/50 p-4 mb-8">
         <h2 className="font-semibold text-foreground mb-2">Activity</h2>
         <p className="text-sm text-muted-foreground">
-          Spotted <span className="font-semibold text-foreground">{idea.mention_count}</span> time{idea.mention_count !== 1 ? "s" : ""} across
+          Spotted <span className="font-semibold text-foreground">{displayMentions(idea.mention_count)}</span> time{idea.mention_count !== 1 ? "s" : ""} across
           the internet since {formatDate(idea.first_seen_at)}.
           {idea.last_seen_at !== idea.first_seen_at && (
             <> Most recently on {formatDate(idea.last_seen_at)}.</>

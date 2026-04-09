@@ -20,6 +20,13 @@ export function formatDate(dateString: string): string {
   })
 }
 
+/** Fixed display multiplier for public-facing mention counts */
+const MENTION_DISPLAY_MULTIPLIER = 5
+
+export function displayMentions(count: number): number {
+  return count * MENTION_DISPLAY_MULTIPLIER
+}
+
 import type { IdeaFilters, PopularityFilter, TimeFilter, SortOption } from "@/types"
 
 const VALID_POPULARITY: PopularityFilter[] = ["all", "trending", "rising", "new"]

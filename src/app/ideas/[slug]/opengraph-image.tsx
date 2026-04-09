@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og"
 import { createClient } from "@supabase/supabase-js"
+import { displayMentions } from "@/lib/utils"
 
 export const alt = "Vibe Code Ideas"
 export const size = { width: 1200, height: 630 }
@@ -133,7 +134,7 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
         >
           <div style={{ display: "flex", flexDirection: "column" as const, gap: "4px" }}>
             <div style={{ display: "flex", fontSize: "14px", color: "#71717a", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Mentions</div>
-            <div style={{ display: "flex", fontSize: "28px", fontWeight: 700, color: "#fafafa" }}>{idea.mention_count}</div>
+            <div style={{ display: "flex", fontSize: "28px", fontWeight: 700, color: "#fafafa" }}>{displayMentions(idea.mention_count)}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" as const, gap: "4px" }}>
             <div style={{ display: "flex", fontSize: "14px", color: "#71717a", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Popularity</div>

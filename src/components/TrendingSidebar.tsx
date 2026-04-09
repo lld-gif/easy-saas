@@ -1,6 +1,7 @@
 import Link from "next/link"
 import type { Idea } from "@/types"
 import { getCategoryBySlug } from "@/lib/categories"
+import { displayMentions } from "@/lib/utils"
 
 interface Props {
   ideas: Idea[]
@@ -41,7 +42,7 @@ export function TrendingSidebar({ ideas }: Props) {
                         {cat.label}
                       </span>
                       <span className="text-[10px] text-gray-400">
-                        {idea.mention_count} mentions
+                        {displayMentions(idea.mention_count)} mentions
                       </span>
                     </div>
                   </div>
@@ -57,39 +58,8 @@ export function TrendingSidebar({ ideas }: Props) {
             View all trending →
           </Link>
         </div>
-
-        {/* Top Categories */}
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Top Categories</h3>
-          <div className="flex flex-wrap gap-1.5">
-            {getTopCategories(ideas).map(({ slug, label, color, count }) => (
-              <Link
-                key={slug}
-                href={`/ideas/category/${slug}`}
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${color} hover:opacity-80 transition-opacity`}
-              >
-                {label}
-                <span className="opacity-60">{count}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
       </div>
     </aside>
   )
 }
 
-function getTopCategories(ideas: Idea[]) {
-  const counts = new Map<string, number>()
-  for (const idea of ideas) {
-    counts.set(idea.category, (counts.get(idea.category) || 0) + 1)
-  }
-
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
-    .map(([slug, count]) => {
-      const cat = getCategoryBySlug(slug)
-      return { slug, label: cat.label, color: cat.color, count }
-    })
-}
