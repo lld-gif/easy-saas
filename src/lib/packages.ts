@@ -85,21 +85,27 @@ IMPORTANT: The data_model should have 3-5 tables with realistic columns and type
 Return ONLY valid JSON. No markdown, no explanation.`
 
   let fillData: any
+  let lastError: unknown
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       if (attempt > 0) await new Promise((r) => setTimeout(r, 2000))
+      console.log(`[generate] attempt ${attempt + 1}, model: claude-haiku-4-5-20251001, idea: ${idea.id}`)
       const response = await getAnthropic().messages.create({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 2048,
         messages: [{ role: "user", content: prompt }],
       })
+      console.log(`[generate] API response received, stop_reason: ${response.stop_reason}`)
       const text = response.content[0].type === "text" ? response.content[0].text : ""
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error("No JSON in response")
       fillData = JSON.parse(jsonMatch[0])
       break
     } catch (e) {
-      if (attempt === 1) throw new Error("LLM generation failed after retry")
+      lastError = e
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error(`[generate] attempt ${attempt + 1} failed:`, msg)
+      if (attempt === 1) throw new Error(`LLM generation failed after retry: ${msg}`)
     }
   }
 

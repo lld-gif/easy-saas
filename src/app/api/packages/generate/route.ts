@@ -63,11 +63,15 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ package: packageJson, cached: false })
-  } catch (e) {
-    console.error("Package generation failed:", e)
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error(String(e))
+    console.error("Package generation failed:", err.message)
+    console.error("Stack:", err.stack)
+    if ("status" in (e as any)) console.error("API status:", (e as any).status)
+    if ("error" in (e as any)) console.error("API error:", JSON.stringify((e as any).error))
     return NextResponse.json({
       error: "Generation temporarily unavailable",
-      message: "Please try again later.",
+      message: err.message || "Please try again later.",
     }, { status: 500 })
   }
 }
