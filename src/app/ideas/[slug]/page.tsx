@@ -7,6 +7,7 @@ import { MentionBadge } from "@/components/MentionBadge"
 import { DifficultyBadge } from "@/components/DifficultyBadge"
 import { SignalBar } from "@/components/SignalBar"
 import { PackageSection } from "@/components/PackageSection"
+import { ShareButtons } from "@/components/ShareButtons"
 import {
   getIdeaBySlug,
   getAggregateStats,
@@ -177,6 +178,8 @@ export default async function IdeaDetailPage({ params }: Props) {
           )}
         </p>
       </div>
+
+      <ShareButtons title={idea.title} summary={idea.summary} />
 
       <Suspense fallback={null}>
         <PackageSection ideaId={idea.id} ideaTitle={idea.title} />
