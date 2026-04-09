@@ -29,7 +29,7 @@ export function HeroSection({ ideaCount }: HeroSectionProps) {
         <div className="flex-1 text-center lg:text-left">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground">
             Crowdsourced<br />
-            <span className="text-orange-500 text-orange-400">shower ideas</span>
+            <span className="text-orange-500">shower ideas</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-lg">
             AI-curated SaaS ideas spotted across the internet. Ranked by demand signals. Ready to build.
@@ -47,19 +47,19 @@ export function HeroSection({ ideaCount }: HeroSectionProps) {
           </form>
           {ideaCount > 0 && (
             <p className="mt-4 text-sm text-muted-foreground">
-              <span className="text-orange-500 text-orange-400 font-semibold">{ideaCount}</span> ideas discovered and counting
+              <span className="text-orange-500 font-semibold">{ideaCount}</span> ideas discovered and counting
             </p>
           )}
         </div>
 
         {/* Right: Hero visual placeholder */}
         <div className="flex-1 max-w-md w-full">
-          <div className="bg-gradient-to-br from-indigo-950/50 to-orange-950/30 rounded-2xl p-8 border border-border">
+          <div className="bg-gradient-to-br from-indigo-50 to-orange-50 rounded-2xl p-8 border border-border">
             <div className="space-y-3">
               {[
-                { icon: "code", bg: "bg-blue-500/15", iconColor: "text-blue-600 text-blue-400", title: "AI Code Assistant", tag: "DevTools", count: 12 },
-                { icon: "dollar", bg: "bg-emerald-500/15", iconColor: "text-emerald-600 text-emerald-400", title: "Smart Invoice Parser", tag: "Fintech", count: 9 },
-                { icon: "chart", bg: "bg-lime-500/15", iconColor: "text-lime-600 text-lime-400", title: "Content Scheduler", tag: "Marketing", count: 6 },
+                { icon: "code", bg: "bg-blue-100", iconColor: "text-blue-600", title: "AI Code Assistant", tag: "DevTools", count: 12 },
+                { icon: "dollar", bg: "bg-emerald-100", iconColor: "text-emerald-600", title: "Smart Invoice Parser", tag: "Fintech", count: 9 },
+                { icon: "chart", bg: "bg-lime-100", iconColor: "text-lime-600", title: "Content Scheduler", tag: "Marketing", count: 6 },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 bg-card/80 rounded-xl px-4 py-3 border border-border">
                   <div className={`${item.bg} w-9 h-9 rounded-xl flex items-center justify-center`}>

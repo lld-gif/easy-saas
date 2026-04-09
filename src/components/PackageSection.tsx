@@ -68,7 +68,7 @@ function renderMarkdown(md: string): string {
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.*?)\*/g, "<em>$1</em>")
     .replace(/`(.*?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-xs font-mono">$1</code>')
-    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-orange-500 dark:text-orange-400 underline" target="_blank" rel="noopener">$1</a>')
+    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-orange-500 underline" target="_blank" rel="noopener">$1</a>')
     .replace(/^- \[ \] (.*$)/gm, "<div class='flex gap-2 ml-4'><span>☐</span><span>$1</span></div>")
     .replace(/^- (.*$)/gm, "<div class='flex gap-2 ml-4'><span>•</span><span>$1</span></div>")
     .replace(/^(\d+)\. (.*$)/gm, "<div class='flex gap-2 ml-4'><span>$1.</span><span>$2</span></div>")

@@ -42,7 +42,7 @@ export function PricingCards() {
           )}
         >
           Annual
-          <span className="ml-1.5 text-xs font-bold text-emerald-400">Save 40%</span>
+          <span className="ml-1.5 text-xs font-bold text-emerald-600">Save 40%</span>
         </button>
       </div>
 
@@ -55,7 +55,7 @@ export function PricingCards() {
           <ul className="mt-6 space-y-3">
             {features.map((f) => (
               <li key={f.name} className="flex items-center gap-2 text-sm">
-                <span className={f.free ? "text-emerald-400" : "text-muted-foreground/50"}>
+                <span className={f.free ? "text-emerald-500" : "text-muted-foreground/50"}>
                   {f.free ? "\u2713" : "\u2717"}
                 </span>
                 <span className={f.free ? "text-foreground/80" : "text-muted-foreground/50"}>
@@ -94,7 +94,7 @@ export function PricingCards() {
           <ul className="mt-6 space-y-3">
             {features.map((f) => (
               <li key={f.name} className="flex items-center gap-2 text-sm">
-                <span className="text-emerald-400">{"\u2713"}</span>
+                <span className="text-emerald-500">{"\u2713"}</span>
                 <span className="text-foreground/80">{f.name}</span>
               </li>
             ))}

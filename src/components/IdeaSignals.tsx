@@ -26,7 +26,7 @@ export function IdeaSignalsCompact({ idea, popPercentile }: IdeaSignalsCompactPr
     <div className="flex items-center gap-2">
       {/* Popularity */}
       <div className="flex items-center gap-1" title={`Popularity: top ${Math.max(1, 100 - popPercentile)}%`}>
-        <svg className="w-3 h-3 text-orange-400 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+        <svg className="w-3 h-3 text-orange-500 shrink-0" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 1.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12.2l-4.2 2.3.8-4.7L1.2 6.5l4.7-.7z" />
         </svg>
         <SignalBar percentile={popPercentile} label="Popularity" value={`${idea.popularity_score.toFixed(1)}`} color="orange" compact />
@@ -35,7 +35,7 @@ export function IdeaSignalsCompact({ idea, popPercentile }: IdeaSignalsCompactPr
       {/* Market Signal */}
       {showSignal && (
         <div className="flex items-center gap-1" title={`Market demand: ${idea.market_signal}`}>
-          <svg className={`w-3 h-3 shrink-0 ${idea.market_signal === "strong" ? "text-green-500" : idea.market_signal === "moderate" ? "text-orange-400" : "text-red-400"}`} viewBox="0 0 16 16" fill="currentColor">
+          <svg className={`w-3 h-3 shrink-0 ${idea.market_signal === "strong" ? "text-green-600" : idea.market_signal === "moderate" ? "text-orange-500" : "text-red-500"}`} viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 1a5 5 0 110 10A5 5 0 018 3zm0 2a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1zm0 6a.75.75 0 100 1.5.75.75 0 000-1.5z" />
           </svg>
           <SignalBar percentile={mktPct} label="Market" value={idea.market_signal} color={signalToColor(idea.market_signal)} compact />

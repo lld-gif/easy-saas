@@ -19,7 +19,7 @@ const dotColors = {
   orange: "bg-orange-500",
   blue: "bg-blue-500",
   red: "bg-red-500",
-  gray: "bg-zinc-500 dark:bg-zinc-400",
+  gray: "bg-zinc-500",
 }
 
 const fillColors = {
@@ -31,10 +31,10 @@ const fillColors = {
 }
 
 const textColors = {
-  green: "text-green-400",
-  orange: "text-orange-400",
-  blue: "text-blue-400",
-  red: "text-red-400",
+  green: "text-green-600",
+  orange: "text-orange-600",
+  blue: "text-blue-600",
+  red: "text-red-600",
   gray: "text-muted-foreground",
 }
 

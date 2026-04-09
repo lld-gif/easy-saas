@@ -84,41 +84,6 @@
   --sidebar-ring: #6366f1;
 }
 
-.dark {
-  /* Dark mode — zinc-950 base */
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #18181b;
-  --card-foreground: #fafafa;
-  --popover: #18181b;
-  --popover-foreground: #fafafa;
-  --primary: #818cf8;
-  --primary-foreground: #09090b;
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
-  --destructive: #ef4444;
-  --border: #27272a;
-  --input: #3f3f46;
-  --ring: #818cf8;
-  --chart-1: #818cf8;
-  --chart-2: #34d399;
-  --chart-3: #fb923c;
-  --chart-4: #f472b6;
-  --chart-5: #22d3ee;
-  --sidebar: #18181b;
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #818cf8;
-  --sidebar-primary-foreground: #fafafa;
-  --sidebar-accent: #27272a;
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #27272a;
-  --sidebar-ring: #818cf8;
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
