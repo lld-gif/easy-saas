@@ -97,7 +97,7 @@ Return ONLY valid JSON. No markdown, no explanation.`
       })
       console.log(`[generate] API response received, stop_reason: ${response.stop_reason}, tokens: ${response.usage?.output_tokens}`)
       const text = response.content[0].type === "text" ? response.content[0].text : ""
-      const jsonMatch = text.match(/\{[\s\S]*/)
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error("No JSON in response")
       // Clean and repair common LLM JSON issues
       let cleaned = jsonMatch[0]
