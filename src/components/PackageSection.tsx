@@ -188,7 +188,7 @@ export function PackageSection({ ideaId, ideaTitle }: PackageSectionProps) {
         <h2 className="text-xl font-bold mb-4">Quick Start Package</h2>
         <BlurredPreview />
         <div className="text-center mt-4">
-          <p className="text-sm text-muted-foreground mb-3">Upgrade to Pro to unlock Tech Spec, Brand Kit, and Launch Checklist</p>
+          <p className="text-sm text-muted-foreground mb-3">Upgrade to Pro to unlock Tech Spec, Brand Kit, and Launch Checklist — from $4.17/mo</p>
           <UpgradeButton />
         </div>
       </div>

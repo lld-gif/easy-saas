@@ -3,13 +3,22 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 
-export function UpgradeButton({ className }: { className?: string }) {
+interface UpgradeButtonProps {
+  plan?: "monthly" | "annual"
+  className?: string
+}
+
+export function UpgradeButton({ plan = "monthly", className }: UpgradeButtonProps) {
   const [loading, setLoading] = useState(false)
 
   const handleUpgrade = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/stripe/checkout", { method: "POST" })
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      })
       const { url, error } = await res.json()
       if (url) window.location.href = url
       else console.error("No checkout URL:", error)
@@ -20,13 +29,15 @@ export function UpgradeButton({ className }: { className?: string }) {
     }
   }
 
+  const label = plan === "annual" ? "Get Pro — $50/year" : "Get Pro — $7/month"
+
   return (
     <Button
       onClick={handleUpgrade}
       disabled={loading}
       className={`bg-orange-500 hover:bg-orange-600 text-white ${className ?? ""}`}
     >
-      {loading ? "Loading..." : "Get Pro — $5/month"}
+      {loading ? "Loading..." : label}
     </Button>
   )
 }
