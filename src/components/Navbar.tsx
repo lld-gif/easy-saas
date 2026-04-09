@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { AuthButton } from "@/components/AuthButton"
-import { ThemeToggle } from "@/components/ThemeToggle"
 
 export function Navbar() {
   return (
@@ -14,7 +13,7 @@ export function Navbar() {
               <path d="M19.5 10L25 16l-5.5 6" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M17.5 9L14.5 23" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
             </svg>
-            <span><span className="text-orange-500 dark:text-orange-400">Vibe</span><span className="text-foreground">Code Ideas</span></span>
+            <span><span className="text-orange-400">Vibe</span><span className="text-foreground">Code Ideas</span></span>
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/ideas" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -23,7 +22,6 @@ export function Navbar() {
             <Link href="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Pricing
             </Link>
-            <ThemeToggle />
             <AuthButton />
           </div>
         </div>

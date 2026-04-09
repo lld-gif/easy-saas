@@ -15,12 +15,17 @@ export function IdeaListRow({ idea, rank }: IdeaListRowProps) {
       href={`/ideas/${idea.slug}`}
       className="group flex items-center gap-4 px-4 py-5 border-b border-border/50 transition-colors hover:bg-muted/30"
     >
+      {/* Rank */}
+      <span className="text-lg font-bold text-muted-foreground/50 w-8 text-right shrink-0 tabular-nums">
+        {rank}
+      </span>
+
       {/* Icon */}
       <IdeaIcon category={idea.category} size="md" />
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-foreground group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors">
+        <h3 className="font-semibold text-foreground group-hover:text-orange-500 group-hover:text-orange-400 transition-colors">
           {idea.title}
         </h3>
         <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
@@ -34,7 +39,7 @@ export function IdeaListRow({ idea, rank }: IdeaListRowProps) {
             </svg>
             {[idea.category.replace('-', '/'), ...idea.tags.slice(0, 2)].join(' · ')}
           </div>
-          <div className="flex items-center gap-1 text-xs text-orange-500 dark:text-orange-400">
+          <div className="flex items-center gap-1 text-xs text-orange-500 text-orange-400">
             <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 1.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12.2l-4.2 2.3.8-4.7L1.2 6.5l4.7-.7z" />
             </svg>

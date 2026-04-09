@@ -31,10 +31,10 @@ const fillColors = {
 }
 
 const textColors = {
-  green: "text-green-600 dark:text-green-400",
-  orange: "text-orange-600 dark:text-orange-400",
-  blue: "text-blue-600 dark:text-blue-400",
-  red: "text-red-600 dark:text-red-400",
+  green: "text-green-400",
+  orange: "text-orange-400",
+  blue: "text-blue-400",
+  red: "text-red-400",
   gray: "text-muted-foreground",
 }
 

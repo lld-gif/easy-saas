@@ -112,7 +112,7 @@ export default async function IdeaDetailPage({ params }: Props) {
         ))}
       </div>
 
-      <div className="prose dark:prose-invert max-w-none mb-8">
+      <div className="prose prose-invert max-w-none mb-8">
         <p className="text-lg leading-relaxed text-foreground/80">{idea.summary}</p>
       </div>
 

@@ -40,7 +40,7 @@ export function IdeaCard({ idea }: IdeaCardProps) {
 
           {/* Popularity + Difficulty + Mentions — aligned row */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 text-xs text-orange-500 dark:text-orange-400">
+            <div className="flex items-center gap-1 text-xs text-orange-400">
               <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M8 1.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12.2l-4.2 2.3.8-4.7L1.2 6.5l4.7-.7z" />
               </svg>

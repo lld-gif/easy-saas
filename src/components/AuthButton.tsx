@@ -76,7 +76,7 @@ export function AuthButton() {
       </span>
       {status === "pro" ? (
         <>
-          <span className="text-xs font-bold bg-orange-500/15 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full">PRO</span>
+          <span className="text-xs font-bold bg-orange-500/15 text-orange-400 px-2 py-0.5 rounded-full">PRO</span>
           <button onClick={manageSubscription} className="text-xs text-muted-foreground hover:text-foreground">
             Manage
           </button>
