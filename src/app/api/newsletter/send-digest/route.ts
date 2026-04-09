@@ -105,7 +105,7 @@ export async function GET(request: Request) {
     const results = await Promise.allSettled(
       batch.map((sub) =>
         resend.emails.send({
-          from: "Vibe Code Ideas <digest@vibecodeideas.ai>",
+          from: "Vibe Code Ideas <digest@resend.dev>",
           to: sub.email,
           subject: `Top 5 SaaS Ideas This Week — ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
           html: emailHtml.replace("{{email}}", encodeURIComponent(sub.email)),
