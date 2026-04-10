@@ -19,11 +19,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Vibe Code Ideas — Discover Your Next SaaS Idea",
   description:
-    "Vibe Code Ideas is a free directory of 500+ curated micro-SaaS and SaaS ideas ranked by real demand signals. Browse by category, difficulty, and trending popularity to find your next project to build.",
+    "Vibe Code Ideas is a free directory of curated micro-SaaS and SaaS ideas ranked by real demand signals. Browse by category, difficulty, and trending popularity to find your next project to build.",
   openGraph: {
     title: "Vibe Code Ideas — Discover Your Next SaaS Idea",
     description:
-      "Vibe Code Ideas is a free directory of 500+ curated micro-SaaS and SaaS ideas ranked by real demand signals. Browse by category, difficulty, and trending popularity to find your next project to build.",
+      "Vibe Code Ideas is a free directory of curated micro-SaaS and SaaS ideas ranked by real demand signals. Browse by category, difficulty, and trending popularity to find your next project to build.",
     siteName: "Vibe Code Ideas",
   },
 }
