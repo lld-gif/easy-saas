@@ -1,5 +1,20 @@
 /** Pure utility functions for signal display — safe for client components */
 
+/**
+ * Format a 0-100 percentile as a human-readable rank label.
+ * Flips semantics at the median so the label is never misleading:
+ *   - percentile >= 50 → "Top {100-p}%" (brag: top 5%, top 20%…)
+ *   - percentile <  50 → "Bottom {p}%" (honest: bottom 1%, bottom 10%…)
+ * Floors the number at 1 so we never render "Top 0%" or "Bottom 0%".
+ */
+export function formatPercentileLabel(percentile: number): string {
+  const clamped = Math.max(0, Math.min(100, percentile))
+  if (clamped >= 50) {
+    return `Top ${Math.max(1, 100 - clamped)}%`
+  }
+  return `Bottom ${Math.max(1, clamped)}%`
+}
+
 /** Maps market_signal to a percentile-like value for display */
 export function signalToPercentile(signal: string): number {
   switch (signal) {
