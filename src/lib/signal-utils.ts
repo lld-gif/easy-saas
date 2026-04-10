@@ -1,32 +1,41 @@
 /** Pure utility functions for signal display — safe for client components */
 
 /**
- * Format a 0-100 percentile as a human-readable rank label.
- * Flips semantics at the median so the label is never misleading:
- *   - percentile >= 50 → "Top {100-p}%" (brag: top 5%, top 20%…)
- *   - percentile <  50 → "Bottom {p}%" (honest: bottom 1%, bottom 10%…)
- * Floors the number at 1 so we never render "Top 0%" or "Bottom 0%".
+ * Format a 0-100 percentile as a human-readable tier label.
+ * Uses five buckets with a real middle band so mid-pack ideas don't
+ * all read as "Bottom X%":
+ *   ≥ 90 → "Top 10%"
+ *   ≥ 75 → "Top 25%"
+ *   ≥ 40 → "Average"
+ *   ≥ 15 → "Below Avg"
+ *   <15  → "Bottom 15%"
  */
 export function formatPercentileLabel(percentile: number): string {
   const clamped = Math.max(0, Math.min(100, percentile))
-  if (clamped >= 50) {
-    return `Top ${Math.max(1, 100 - clamped)}%`
-  }
-  return `Bottom ${Math.max(1, clamped)}%`
+  if (clamped >= 90) return "Top 10%"
+  if (clamped >= 75) return "Top 25%"
+  if (clamped >= 40) return "Average"
+  if (clamped >= 15) return "Below Avg"
+  return "Bottom 15%"
 }
 
 /**
  * Returns the 0-100 percentile rank for a given score against a sorted
- * (ascending) array of all scores. Pure function — safe for client components.
+ * (ascending) array of all scores. Uses midrank for ties so tied values
+ * land in the middle of their rank range rather than the bottom —
+ * otherwise heavy-tailed score distributions collapse everything to
+ * "Top 1%" or "Bottom X%" with nothing in between. Pure function — safe
+ * for client components.
  */
 export function getPercentile(score: number, sortedScores: number[]): number {
   if (sortedScores.length === 0) return 50
-  let count = 0
+  let below = 0
+  let equal = 0
   for (const s of sortedScores) {
-    if (s < score) count++
-    else break
+    if (s < score) below++
+    else if (s === score) equal++
   }
-  return Math.round((count / sortedScores.length) * 100)
+  return Math.round(((below + equal / 2) / sortedScores.length) * 100)
 }
 
 /** Maps market_signal to a percentile-like value for display */
