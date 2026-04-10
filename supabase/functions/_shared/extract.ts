@@ -171,7 +171,7 @@ export async function deduplicateAndInsert(
         market_signal: idea.market_signal ?? "unknown",
         competition_level: idea.competition_level ?? "unknown",
         revenue_potential: idea.revenue_potential ?? "unknown",
-        popularity_score: 3.5, // Base score: 1*0.5 + 1*2.0 + 1.0*3.0 (new, 1 source, fresh)
+        // popularity_score is computed by DB trigger on insert
       })
       .select()
       .single()

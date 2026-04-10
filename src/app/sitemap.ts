@@ -57,6 +57,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.5,
     },
+    {
+      url: "https://vibecodeideas.ai/privacy",
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: "https://vibecodeideas.ai/terms",
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
     ...categoryEntries,
     ...difficultyEntries,
     ...ideaEntries,
