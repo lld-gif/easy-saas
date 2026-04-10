@@ -68,11 +68,12 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4"
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 overflow-y-auto"
       onClick={onClose}
     >
+      <div className="min-h-full flex items-center justify-center p-4">
       <div
-        className="bg-card border border-border rounded-xl p-8 max-w-sm w-full relative shadow-xl"
+        className="bg-card border border-border rounded-xl p-6 sm:p-8 max-w-sm w-full relative shadow-xl my-8"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -153,6 +154,7 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
             </p>
           </>
         )}
+      </div>
       </div>
     </div>
   )
