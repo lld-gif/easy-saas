@@ -68,7 +68,7 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 overflow-y-auto"
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] overflow-y-auto"
       onClick={onClose}
     >
       <div className="min-h-full flex items-center justify-center p-4">
