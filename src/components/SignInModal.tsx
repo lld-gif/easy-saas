@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { createClient } from "@/lib/supabase/client"
 
 interface SignInModalProps {
@@ -65,8 +66,9 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
   }
 
   if (!open) return null
+  if (typeof document === "undefined") return null
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] overflow-y-auto"
       onClick={onClose}
@@ -156,6 +158,7 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
         )}
       </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
