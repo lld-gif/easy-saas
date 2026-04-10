@@ -58,7 +58,7 @@ export default function OGImage() {
             lineHeight: 1.4,
           }}
         >
-          AI-curated SaaS ideas ranked by demand signals. Ready to build.
+          Curated SaaS ideas ranked by demand signals. Ready to build.
         </div>
       </div>
     ),

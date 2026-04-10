@@ -13,6 +13,9 @@ export function HeroSection({ ideaCount }: HeroSectionProps) {
   const router = useRouter()
   const [query, setQuery] = useState("")
 
+  const roundedCount = Math.max(100, Math.floor(ideaCount / 100) * 100)
+  const countLabel = roundedCount.toLocaleString()
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (query.trim()) {
@@ -32,7 +35,7 @@ export function HeroSection({ ideaCount }: HeroSectionProps) {
             <span className="text-orange-500">shower ideas</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-lg">
-            AI-curated SaaS ideas spotted across the internet. Ranked by demand signals. Ready to build.
+            Side hustle money for the creatively challenged. {countLabel}+ SaaS ideas spotted across the internet. Ready to build.
           </p>
           <form onSubmit={handleSearch} className="mt-6 flex flex-col sm:flex-row max-w-md gap-2 mx-auto lg:mx-0">
             <Input
