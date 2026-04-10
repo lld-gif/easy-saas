@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import type { User } from "@supabase/supabase-js"
+import { SignInModal } from "@/components/SignInModal"
 
 interface AuthButtonProps {
   mobile?: boolean
@@ -15,6 +16,7 @@ export function AuthButton({ mobile, onAction }: AuthButtonProps) {
   const [user, setUser] = useState<User | null>(null)
   const [status, setStatus] = useState<string>("free")
   const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -32,16 +34,13 @@ export function AuthButton({ mobile, onAction }: AuthButtonProps) {
     })
   }, [])
 
-  const signIn = async () => {
-    const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: { prompt: "select_account" },
-      },
-    })
+  const openSignIn = () => {
+    setModalOpen(true)
     onAction?.()
+  }
+
+  const closeSignIn = () => {
+    setModalOpen(false)
   }
 
   const signOut = async () => {
@@ -73,12 +72,15 @@ export function AuthButton({ mobile, onAction }: AuthButtonProps) {
   if (mobile) {
     if (!user) {
       return (
-        <button
-          onClick={signIn}
-          className="w-full text-left text-sm font-medium text-foreground py-1"
-        >
-          Sign in with Google
-        </button>
+        <>
+          <button
+            onClick={openSignIn}
+            className="w-full text-left text-sm font-medium text-foreground py-1"
+          >
+            Sign in
+          </button>
+          <SignInModal open={modalOpen} onClose={closeSignIn} />
+        </>
       )
     }
 
@@ -114,12 +116,15 @@ export function AuthButton({ mobile, onAction }: AuthButtonProps) {
   // --- Desktop layout (inline row) ---
   if (!user) {
     return (
-      <button
-        onClick={signIn}
-        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-      >
-        Sign in
-      </button>
+      <>
+        <button
+          onClick={openSignIn}
+          className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Sign in
+        </button>
+        <SignInModal open={modalOpen} onClose={closeSignIn} />
+      </>
     )
   }
 
