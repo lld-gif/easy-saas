@@ -3,6 +3,8 @@
  * Used for popularity score, market signal, revenue potential on cards and detail pages.
  */
 
+import { formatPercentileLabel } from "@/lib/signal-utils"
+
 interface SignalBarProps {
   /** 0-100 percentile position */
   percentile: number
@@ -46,10 +48,11 @@ export function SignalBar({
   compact = false,
 }: SignalBarProps) {
   const clamped = Math.max(0, Math.min(100, percentile))
+  const rankLabel = formatPercentileLabel(clamped)
 
   if (compact) {
     return (
-      <div className="flex items-center gap-1.5" title={`${label}: ${value} (top ${100 - clamped}%)`}>
+      <div className="flex items-center gap-1.5" title={`${label}: ${value} (${rankLabel.toLowerCase()})`}>
         <div className="relative h-1.5 w-10 rounded-full bg-muted">
           <div
             className={`absolute left-0 top-0 h-1.5 rounded-full ${fillColors[color]}`}
@@ -82,7 +85,7 @@ export function SignalBar({
       </div>
       <div className="flex justify-between text-[10px] text-muted-foreground">
         <span>Low</span>
-        <span>Top {Math.max(1, 100 - clamped)}%</span>
+        <span>{rankLabel}</span>
         <span>High</span>
       </div>
     </div>

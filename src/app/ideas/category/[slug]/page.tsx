@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { CATEGORIES, getCategoryBySlug } from "@/lib/categories"
 import { IdeaListRow } from "@/components/IdeaListRow"
+import { getAggregateStats, getPercentile } from "@/lib/queries"
 import type { Idea } from "@/types"
 
 type Props = {
@@ -66,13 +67,16 @@ export default async function CategoryPage({ params }: Props) {
   }
 
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from("ideas")
-    .select("*")
-    .eq("status", "active")
-    .eq("category", slug)
-    .order("popularity_score", { ascending: false })
-    .limit(20)
+  const [{ data, error }, stats] = await Promise.all([
+    supabase
+      .from("ideas")
+      .select("*")
+      .eq("status", "active")
+      .eq("category", slug)
+      .order("popularity_score", { ascending: false })
+      .limit(20),
+    getAggregateStats(),
+  ])
 
   if (error) {
     console.error("Failed to fetch category ideas:", error)
@@ -114,7 +118,16 @@ export default async function CategoryPage({ params }: Props) {
       {ideas.length > 0 ? (
         <div className="divide-y divide-border/50">
           {ideas.map((idea, index) => (
-            <IdeaListRow key={idea.id} idea={idea} rank={index + 1} />
+            <IdeaListRow
+              key={idea.id}
+              idea={idea}
+              rank={index + 1}
+              popPercentile={
+                stats.popularity_scores.length > 0
+                  ? getPercentile(idea.popularity_score, stats.popularity_scores)
+                  : undefined
+              }
+            />
           ))}
         </div>
       ) : (

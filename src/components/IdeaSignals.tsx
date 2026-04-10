@@ -4,6 +4,7 @@ import {
   signalToColor,
   revenueToPercentile,
   revenueToColor,
+  formatPercentileLabel,
 } from "@/lib/signal-utils"
 import type { Idea } from "@/types"
 
@@ -25,11 +26,11 @@ export function IdeaSignalsCompact({ idea, popPercentile }: IdeaSignalsCompactPr
   return (
     <div className="flex items-center gap-2">
       {/* Popularity */}
-      <div className="flex items-center gap-1" title={`Popularity: top ${Math.max(1, 100 - popPercentile)}%`}>
+      <div className="flex items-center gap-1" title={`Popularity: ${formatPercentileLabel(popPercentile).toLowerCase()}`}>
         <svg className="w-3 h-3 text-orange-500 shrink-0" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 1.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12.2l-4.2 2.3.8-4.7L1.2 6.5l4.7-.7z" />
         </svg>
-        <SignalBar percentile={popPercentile} label="Popularity" value={`${idea.popularity_score.toFixed(1)}`} color="orange" compact />
+        <SignalBar percentile={popPercentile} label="Popularity" value={formatPercentileLabel(popPercentile)} color="orange" compact />
       </div>
 
       {/* Market Signal */}

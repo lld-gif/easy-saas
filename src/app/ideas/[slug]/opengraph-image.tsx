@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og"
 import { createClient } from "@supabase/supabase-js"
 import { displayMentions } from "@/lib/utils"
+import { getPercentile, formatPercentileLabel } from "@/lib/signal-utils"
 
 export const alt = "Vibe Code Ideas"
 export const size = { width: 1200, height: 630 }
@@ -33,11 +34,18 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
 
-  const { data: idea } = await supabase
-    .from("ideas")
-    .select("title, category, mention_count, market_signal, difficulty, popularity_score")
-    .eq("slug", slug)
-    .single()
+  const [{ data: idea }, { data: allScores }] = await Promise.all([
+    supabase
+      .from("ideas")
+      .select("title, category, mention_count, market_signal, difficulty, popularity_score")
+      .eq("slug", slug)
+      .single(),
+    supabase
+      .from("ideas")
+      .select("popularity_score")
+      .eq("status", "active")
+      .order("popularity_score", { ascending: true }),
+  ])
 
   if (!idea) {
     return new ImageResponse(
@@ -51,6 +59,11 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
   }
 
   const marketLabel = idea.market_signal === "unknown" ? "Unknown" : idea.market_signal.charAt(0).toUpperCase() + idea.market_signal.slice(1)
+
+  const sortedScores = (allScores ?? []).map((r) => r.popularity_score ?? 0)
+  const popLabel = sortedScores.length > 0
+    ? formatPercentileLabel(getPercentile(idea.popularity_score ?? 0, sortedScores))
+    : "—"
 
   return new ImageResponse(
     (
@@ -138,7 +151,7 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
           </div>
           <div style={{ display: "flex", flexDirection: "column" as const, gap: "4px" }}>
             <div style={{ display: "flex", fontSize: "14px", color: "#71717a", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Popularity</div>
-            <div style={{ display: "flex", fontSize: "28px", fontWeight: 700, color: "#f97316" }}>{idea.popularity_score.toFixed(1)}</div>
+            <div style={{ display: "flex", fontSize: "28px", fontWeight: 700, color: "#f97316" }}>{popLabel}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" as const, gap: "4px" }}>
             <div style={{ display: "flex", fontSize: "14px", color: "#71717a", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Market</div>

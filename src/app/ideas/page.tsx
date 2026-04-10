@@ -5,7 +5,7 @@ import { FilterBar } from "@/components/FilterBar"
 import { ViewToggle } from "@/components/ViewToggle"
 import { InfiniteIdeas } from "@/components/InfiniteIdeas"
 import { TrendingSidebar } from "@/components/TrendingSidebar"
-import { getIdeas, getTrendingIdeas } from "@/lib/queries"
+import { getIdeas, getTrendingIdeas, getAggregateStats } from "@/lib/queries"
 import { parseSearchParams } from "@/lib/utils"
 
 export const metadata: Metadata = {
@@ -21,9 +21,10 @@ interface Props {
 export default async function IdeasPage({ searchParams }: Props) {
   const params = await searchParams
   const filters = parseSearchParams(params)
-  const [{ ideas, nextCursor }, trending] = await Promise.all([
+  const [{ ideas, nextCursor }, trending, stats] = await Promise.all([
     getIdeas(filters),
     getTrendingIdeas(10),
+    getAggregateStats(),
   ])
 
   return (
@@ -54,6 +55,7 @@ export default async function IdeasPage({ searchParams }: Props) {
               view={filters.view ?? "card"}
               hasFilters={!!(filters.q || filters.popularity || filters.time)}
               hasCategory={!!filters.category}
+              popularityScores={stats.popularity_scores}
             />
           </Suspense>
         </div>

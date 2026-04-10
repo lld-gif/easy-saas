@@ -1,5 +1,43 @@
 /** Pure utility functions for signal display — safe for client components */
 
+/**
+ * Format a 0-100 percentile as a human-readable tier label.
+ * Uses five buckets with a real middle band so mid-pack ideas don't
+ * all read as "Bottom X%":
+ *   ≥ 90 → "Top 10%"
+ *   ≥ 75 → "Top 25%"
+ *   ≥ 40 → "Average"
+ *   ≥ 15 → "Below Avg"
+ *   <15  → "Bottom 15%"
+ */
+export function formatPercentileLabel(percentile: number): string {
+  const clamped = Math.max(0, Math.min(100, percentile))
+  if (clamped >= 90) return "Top 10%"
+  if (clamped >= 75) return "Top 25%"
+  if (clamped >= 40) return "Average"
+  if (clamped >= 15) return "Below Avg"
+  return "Bottom 15%"
+}
+
+/**
+ * Returns the 0-100 percentile rank for a given score against a sorted
+ * (ascending) array of all scores. Uses midrank for ties so tied values
+ * land in the middle of their rank range rather than the bottom —
+ * otherwise heavy-tailed score distributions collapse everything to
+ * "Top 1%" or "Bottom X%" with nothing in between. Pure function — safe
+ * for client components.
+ */
+export function getPercentile(score: number, sortedScores: number[]): number {
+  if (sortedScores.length === 0) return 50
+  let below = 0
+  let equal = 0
+  for (const s of sortedScores) {
+    if (s < score) below++
+    else if (s === score) equal++
+  }
+  return Math.round(((below + equal / 2) / sortedScores.length) * 100)
+}
+
 /** Maps market_signal to a percentile-like value for display */
 export function signalToPercentile(signal: string): number {
   switch (signal) {
