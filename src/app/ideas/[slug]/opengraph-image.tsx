@@ -40,11 +40,15 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
       .select("title, category, mention_count, market_signal, difficulty, popularity_score")
       .eq("slug", slug)
       .single(),
+    // Must match getAggregateStats — default PostgREST cap is 1000, which
+    // truncates the bottom of the distribution and pins every active idea's
+    // percentile at 100. See queries.ts for the full writeup.
     supabase
       .from("ideas")
       .select("popularity_score")
       .eq("status", "active")
-      .order("popularity_score", { ascending: true }),
+      .order("popularity_score", { ascending: true })
+      .limit(100000),
   ])
 
   if (!idea) {

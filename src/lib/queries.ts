@@ -211,11 +211,17 @@ export async function getAggregateStats(): Promise<AggregateStats> {
   if (_cachedStats && Date.now() - _cacheTime < CACHE_TTL) return _cachedStats
 
   const supabase = await createClient()
+  // Supabase/PostgREST defaults to 1000 rows per request. Without an explicit
+  // limit, ordering by popularity_score ascending returns only the BOTTOM 1000
+  // scores — which made getPercentile() return 100 for every idea above that
+  // truncated max, firing the "Popular" badge across ~950 ideas instead of 32.
+  // Pick a ceiling well above any plausible active-idea count.
   const { data } = await supabase
     .from("ideas")
     .select("popularity_score")
     .eq("status", "active")
     .order("popularity_score", { ascending: true })
+    .limit(100000)
 
   const scores = (data || []).map((d) => d.popularity_score ?? 0)
   _cachedStats = { popularity_scores: scores, total: scores.length }
