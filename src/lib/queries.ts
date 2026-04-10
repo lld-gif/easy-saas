@@ -223,16 +223,10 @@ export async function getAggregateStats(): Promise<AggregateStats> {
   return _cachedStats
 }
 
-/** Returns 0-100 percentile for a given popularity score */
-export function getPercentile(score: number, sortedScores: number[]): number {
-  if (sortedScores.length === 0) return 50
-  let count = 0
-  for (const s of sortedScores) {
-    if (s < score) count++
-    else break
-  }
-  return Math.round((count / sortedScores.length) * 100)
-}
+// getPercentile moved to @/lib/signal-utils so it's usable from client
+// components. Re-exported here for backward compatibility with existing
+// server-component imports.
+export { getPercentile } from "@/lib/signal-utils"
 
 /** Maps market_signal to a percentile-like value for display */
 export function signalToPercentile(signal: string): number {

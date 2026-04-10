@@ -18,6 +18,7 @@ import {
   signalToColor,
   revenueToPercentile,
   revenueToColor,
+  formatPercentileLabel,
 } from "@/lib/signal-utils"
 import { formatDate, displayMentions } from "@/lib/utils"
 
@@ -129,7 +130,7 @@ export default async function IdeaDetailPage({ params }: Props) {
           <div>
             <SignalBar
               label="Popularity"
-              value={`${idea.popularity_score.toFixed(1)} pts`}
+              value={formatPercentileLabel(popPercentile)}
               percentile={popPercentile}
               color="orange"
             />

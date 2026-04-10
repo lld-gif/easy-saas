@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { IdeaListRow } from "@/components/IdeaListRow"
+import { getAggregateStats, getPercentile } from "@/lib/queries"
 import type { Idea } from "@/types"
 
 export const metadata: Metadata = {
@@ -13,12 +14,15 @@ export const metadata: Metadata = {
 export default async function TrendingPage() {
   const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from("ideas")
-    .select("*")
-    .eq("status", "active")
-    .order("popularity_score", { ascending: false })
-    .limit(20)
+  const [{ data, error }, stats] = await Promise.all([
+    supabase
+      .from("ideas")
+      .select("*")
+      .eq("status", "active")
+      .order("popularity_score", { ascending: false })
+      .limit(20),
+    getAggregateStats(),
+  ])
 
   if (error) {
     console.error("Failed to fetch trending ideas:", error)
@@ -47,7 +51,16 @@ export default async function TrendingPage() {
       {ideas.length > 0 ? (
         <div className="divide-y divide-border/50">
           {ideas.map((idea, index) => (
-            <IdeaListRow key={idea.id} idea={idea} rank={index + 1} />
+            <IdeaListRow
+              key={idea.id}
+              idea={idea}
+              rank={index + 1}
+              popPercentile={
+                stats.popularity_scores.length > 0
+                  ? getPercentile(idea.popularity_score, stats.popularity_scores)
+                  : undefined
+              }
+            />
           ))}
         </div>
       ) : (

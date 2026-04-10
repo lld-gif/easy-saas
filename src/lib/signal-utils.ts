@@ -15,6 +15,20 @@ export function formatPercentileLabel(percentile: number): string {
   return `Bottom ${Math.max(1, clamped)}%`
 }
 
+/**
+ * Returns the 0-100 percentile rank for a given score against a sorted
+ * (ascending) array of all scores. Pure function — safe for client components.
+ */
+export function getPercentile(score: number, sortedScores: number[]): number {
+  if (sortedScores.length === 0) return 50
+  let count = 0
+  for (const s of sortedScores) {
+    if (s < score) count++
+    else break
+  }
+  return Math.round((count / sortedScores.length) * 100)
+}
+
 /** Maps market_signal to a percentile-like value for display */
 export function signalToPercentile(signal: string): number {
   switch (signal) {
