@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og"
 import { createClient } from "@supabase/supabase-js"
 import { displayMentions } from "@/lib/utils"
-import { getPercentile, formatPercentileLabel } from "@/lib/signal-utils"
+import { getPercentile, isPopular } from "@/lib/signal-utils"
 
 export const alt = "Vibe Code Ideas"
 export const size = { width: 1200, height: 630 }
@@ -60,10 +60,13 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
 
   const marketLabel = idea.market_signal === "unknown" ? "Unknown" : idea.market_signal.charAt(0).toUpperCase() + idea.market_signal.slice(1)
 
+  // Scarcity badge: only p99+ ideas surface a "Popular" chip in the OG image.
+  // Everyone else just gets the 3-column signals row, matching the site-wide
+  // scarcity principle. See Knowledge/Midrank Percentile Computation.
   const sortedScores = (allScores ?? []).map((r) => r.popularity_score ?? 0)
-  const popLabel = sortedScores.length > 0
-    ? formatPercentileLabel(getPercentile(idea.popularity_score ?? 0, sortedScores))
-    : "—"
+  const popular = sortedScores.length > 0
+    ? isPopular(getPercentile(idea.popularity_score ?? 0, sortedScores))
+    : false
 
   return new ImageResponse(
     (
@@ -102,8 +105,8 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
           </div>
         </div>
 
-        {/* Category badge */}
-        <div style={{ display: "flex", marginBottom: "16px" }}>
+        {/* Category badge + optional Popular chip (p99+ only) */}
+        <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
           <div
             style={{
               background: "#27272a",
@@ -119,6 +122,26 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
           >
             {idea.category}
           </div>
+          {popular && (
+            <div
+              style={{
+                background: "rgba(249, 115, 22, 0.12)",
+                border: "1px solid rgba(249, 115, 22, 0.4)",
+                color: "#f97316",
+                fontSize: "16px",
+                fontWeight: 600,
+                padding: "6px 16px",
+                borderRadius: "20px",
+                textTransform: "uppercase" as const,
+                letterSpacing: "0.05em",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              ★ Popular
+            </div>
+          )}
         </div>
 
         {/* Title */}
@@ -148,10 +171,6 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
           <div style={{ display: "flex", flexDirection: "column" as const, gap: "4px" }}>
             <div style={{ display: "flex", fontSize: "14px", color: "#71717a", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Mentions</div>
             <div style={{ display: "flex", fontSize: "28px", fontWeight: 700, color: "#fafafa" }}>{displayMentions(idea.mention_count)}</div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" as const, gap: "4px" }}>
-            <div style={{ display: "flex", fontSize: "14px", color: "#71717a", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Popularity</div>
-            <div style={{ display: "flex", fontSize: "28px", fontWeight: 700, color: "#f97316" }}>{popLabel}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" as const, gap: "4px" }}>
             <div style={{ display: "flex", fontSize: "14px", color: "#71717a", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Market</div>

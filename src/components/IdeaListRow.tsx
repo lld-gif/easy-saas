@@ -2,7 +2,7 @@ import Link from "next/link"
 import { IdeaIcon } from "@/components/IdeaIcon"
 import { MentionBadge } from "@/components/MentionBadge"
 import { DifficultyBadge } from "@/components/DifficultyBadge"
-import { formatPercentileLabel } from "@/lib/signal-utils"
+import { PopularBadge } from "@/components/PopularBadge"
 import type { Idea } from "@/types"
 
 interface IdeaListRowProps {
@@ -42,14 +42,7 @@ export function IdeaListRow({ idea, rank, popPercentile }: IdeaListRowProps) {
             </svg>
             {[idea.category.replace('-', '/'), ...idea.tags.slice(0, 2)].join(' · ')}
           </div>
-          {popPercentile !== undefined && (
-            <div className="flex items-center gap-1 text-xs text-orange-500">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M8 1.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12.2l-4.2 2.3.8-4.7L1.2 6.5l4.7-.7z" />
-              </svg>
-              <span className="font-medium">{formatPercentileLabel(popPercentile)}</span>
-            </div>
-          )}
+          <PopularBadge percentile={popPercentile} />
         </div>
       </div>
 

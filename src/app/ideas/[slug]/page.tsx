@@ -5,6 +5,7 @@ import { Suspense } from "react"
 import { CategoryBadge } from "@/components/CategoryBadge"
 import { MentionBadge } from "@/components/MentionBadge"
 import { DifficultyBadge } from "@/components/DifficultyBadge"
+import { PopularBadge } from "@/components/PopularBadge"
 import { SignalBar } from "@/components/SignalBar"
 import { PackageSection } from "@/components/PackageSection"
 import { ShareButtons } from "@/components/ShareButtons"
@@ -18,7 +19,7 @@ import {
   signalToColor,
   revenueToPercentile,
   revenueToColor,
-  formatPercentileLabel,
+  isPopular,
 } from "@/lib/signal-utils"
 import { formatDate, displayMentions } from "@/lib/utils"
 
@@ -107,6 +108,7 @@ export default async function IdeaDetailPage({ params }: Props) {
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 mb-8">
         <CategoryBadge category={idea.category} />
         <DifficultyBadge difficulty={idea.difficulty} />
+        <PopularBadge percentile={popPercentile} variant="pill" />
         {idea.tags.map((tag) => (
           <span key={tag} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-input">
             {tag}
@@ -126,11 +128,13 @@ export default async function IdeaDetailPage({ params }: Props) {
         </p>
 
         <div className="grid gap-3 sm:gap-5 sm:grid-cols-2">
-          {/* Popularity Score */}
+          {/* Popularity Score — value shows "Popular" only for p99+, blank
+              otherwise. The bar graphic carries the position info; the
+              scarcity signal lives in the header <PopularBadge> pill. */}
           <div>
             <SignalBar
               label="Popularity"
-              value={formatPercentileLabel(popPercentile)}
+              value={isPopular(popPercentile) ? "Popular" : ""}
               percentile={popPercentile}
               color="orange"
             />

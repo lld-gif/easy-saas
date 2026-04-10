@@ -1,22 +1,31 @@
 /** Pure utility functions for signal display — safe for client components */
 
 /**
- * Format a 0-100 percentile as a human-readable tier label.
- * Uses five buckets with a real middle band so mid-pack ideas don't
- * all read as "Bottom X%":
- *   ≥ 90 → "Top 10%"
- *   ≥ 75 → "Top 25%"
- *   ≥ 40 → "Average"
- *   ≥ 15 → "Below Avg"
- *   <15  → "Bottom 15%"
+ * True if a 0-100 percentile qualifies as "Popular" — used to render the
+ * single scarcity badge across cards, rows, detail sidebar, and OG images.
+ *
+ * Threshold = 99th percentile. Chosen because the underlying popularity_score
+ * distribution is tight (stddev ~0.54 across 1,959 ideas) with 95%+ of the
+ * corpus clustered within 1 point. Only p99+ are genuine outliers (2.5+ stddev
+ * above the mean, multi-source + fresh + high mention count). At current
+ * volume this yields ~32 badges — scarce enough to mean something, visible
+ * enough that users encounter one while browsing.
+ *
+ * See Knowledge/Midrank Percentile Computation for the fidelity analysis.
+ */
+export function isPopular(percentile: number): boolean {
+  return percentile >= 99
+}
+
+/**
+ * @deprecated Use `isPopular()` and render a `<PopularBadge>` instead.
+ * Retained so unused imports don't break the build during the migration.
+ * The old five-tier labels ("Top 10%" etc.) were misleading because the
+ * popularity_score distribution lacks the fidelity to distinguish mid-pack
+ * ideas meaningfully — see Knowledge/Midrank Percentile Computation.
  */
 export function formatPercentileLabel(percentile: number): string {
-  const clamped = Math.max(0, Math.min(100, percentile))
-  if (clamped >= 90) return "Top 10%"
-  if (clamped >= 75) return "Top 25%"
-  if (clamped >= 40) return "Average"
-  if (clamped >= 15) return "Below Avg"
-  return "Bottom 15%"
+  return isPopular(percentile) ? "Popular" : ""
 }
 
 /**
