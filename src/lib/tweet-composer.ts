@@ -14,9 +14,14 @@ interface TweetIdea {
 const SITE_DOMAIN = "vibecodeideas.ai"
 const MAX_TWEET_LENGTH = 280
 
+/** Must match displayMentions in utils.ts */
+function displayMentions(count: number): number {
+  return count * 5 + (count % 4) + 1
+}
+
 export function composeTweet(idea: TweetIdea): string {
   const url = `${SITE_DOMAIN}/ideas/${idea.slug}`
-  const mentions = idea.mention_count ?? 0
+  const mentions = displayMentions(idea.mention_count ?? 0)
   const category = idea.category ?? "SaaS"
 
   const mentionLine = `${mentions} independent mention${mentions !== 1 ? "s" : ""} \u00b7 ${category}`
