@@ -32,7 +32,7 @@ export function HeroSection({ ideaCount }: HeroSectionProps) {
             <span className="text-orange-500">shower ideas</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-lg">
-            Curated SaaS ideas spotted across the internet. Ranked by demand signals. Ready to build.
+            Side hustle money, minus the creativity. Real complaints, real demand, 500+ ideas ready to build.
           </p>
           <form onSubmit={handleSearch} className="mt-6 flex flex-col sm:flex-row max-w-md gap-2 mx-auto lg:mx-0">
             <Input
