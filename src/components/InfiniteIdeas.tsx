@@ -7,7 +7,6 @@ import { IdeaListRow } from "@/components/IdeaListRow"
 import { EmptyState } from "@/components/EmptyState"
 import { getPercentile } from "@/lib/signal-utils"
 import type { Idea } from "@/types"
-import { createClient } from "@/lib/supabase/client"
 
 interface InfiniteIdeasProps {
   initialIdeas: Idea[]
@@ -18,8 +17,6 @@ interface InfiniteIdeasProps {
   /** Sorted-ascending popularity_score array for percentile lookup */
   popularityScores?: number[]
 }
-
-const PAGE_SIZE = 24
 
 export function InfiniteIdeas({
   initialIdeas,
@@ -49,97 +46,32 @@ export function InfiniteIdeas({
     setLoading(true)
 
     try {
-      const supabase = createClient()
-      const sort = searchParams.get("sort") ?? "trending"
-      const category = searchParams.get("category")
-      const q = searchParams.get("q")
-      const difficulty = searchParams.get("difficulty")
+      // Forward every filter URL param unchanged so /api/ideas sees the
+      // exact same query the server-rendered first page used. Single source
+      // of truth: src/lib/queries.ts getIdeas().
+      const next = new URLSearchParams(searchParams.toString())
+      next.set("cursor", cursor)
 
-      // Fetch the cursor row to get its sort value
-      const { data: cursorRow } = await supabase
-        .from("ideas")
-        .select("id, mention_count, first_seen_at, last_seen_at, difficulty")
-        .eq("id", cursor)
-        .single()
+      const res = await fetch(`/api/ideas?${next.toString()}`, {
+        headers: { Accept: "application/json" },
+      })
 
-      if (!cursorRow) {
+      if (!res.ok) {
+        console.error("Failed to fetch more ideas:", res.status)
         setCursor(null)
-        setLoading(false)
         return
       }
 
-      let query = supabase
-        .from("ideas")
-        .select("*")
-        .eq("status", "active")
-
-      if (category) query = query.eq("category", category)
-
-      if (difficulty === "easy") query = query.lte("difficulty", 2)
-      else if (difficulty === "medium") query = query.eq("difficulty", 3)
-      else if (difficulty === "hard") query = query.gte("difficulty", 4)
-
-      if (q) {
-        query = query.textSearch("search_vector", q, {
-          type: "websearch",
-          config: "english",
-        })
+      const body = (await res.json()) as {
+        ideas: Idea[]
+        nextCursor: string | null
       }
 
-      // Sort
-      switch (sort) {
-        case "trending":
-          query = query
-            .order("mention_count", { ascending: false })
-            .order("id", { ascending: false })
-          query = query.or(
-            `mention_count.lt.${cursorRow.mention_count},and(mention_count.eq.${cursorRow.mention_count},id.lt.${cursorRow.id})`
-          )
-          break
-        case "newest":
-          query = query
-            .order("first_seen_at", { ascending: false })
-            .order("id", { ascending: false })
-          query = query.or(
-            `first_seen_at.lt.${cursorRow.first_seen_at},and(first_seen_at.eq.${cursorRow.first_seen_at},id.lt.${cursorRow.id})`
-          )
-          break
-        case "recent":
-          query = query
-            .order("last_seen_at", { ascending: false })
-            .order("id", { ascending: false })
-          query = query.or(
-            `last_seen_at.lt.${cursorRow.last_seen_at},and(last_seen_at.eq.${cursorRow.last_seen_at},id.lt.${cursorRow.id})`
-          )
-          break
-        case "easiest":
-          query = query
-            .order("difficulty", { ascending: true })
-            .order("id", { ascending: false })
-          query = query.or(
-            `difficulty.gt.${cursorRow.difficulty},and(difficulty.eq.${cursorRow.difficulty},id.lt.${cursorRow.id})`
-          )
-          break
-      }
-
-      query = query.limit(PAGE_SIZE + 1)
-      const { data, error } = await query
-
-      if (error || !data) {
-        setCursor(null)
-        setLoading(false)
-        return
-      }
-
-      const newIdeas = data as Idea[]
-      const hasMore = newIdeas.length > PAGE_SIZE
-      const pageIdeas = hasMore ? newIdeas.slice(0, PAGE_SIZE) : newIdeas
-      const nextCursor = hasMore ? pageIdeas[pageIdeas.length - 1].id : null
-
-      setIdeas((prev) => [...prev, ...pageIdeas])
-      setCursor(nextCursor)
+      setIdeas((prev) => [...prev, ...body.ideas])
+      setCursor(body.nextCursor)
     } catch (e) {
       console.error("Failed to fetch more ideas:", e)
+      setCursor(null)
     } finally {
       setLoading(false)
     }
