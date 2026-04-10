@@ -10,11 +10,11 @@ import { CATEGORIES } from "@/lib/categories"
 export const metadata: Metadata = {
   title: "Vibe Code Ideas — Discover Your Next SaaS Idea",
   description:
-    "Vibe Code Ideas is a free directory of 500+ AI-curated micro-SaaS ideas ranked by real demand signals. Browse by category, difficulty, and trending popularity to find your next project to build.",
+    "Vibe Code Ideas is a free directory of 500+ curated micro-SaaS and SaaS ideas ranked by real demand signals. Browse by category, difficulty, and trending popularity to find your next project to build.",
   openGraph: {
     title: "Vibe Code Ideas — Discover Your Next SaaS Idea",
     description:
-      "Vibe Code Ideas is a free directory of 500+ AI-curated micro-SaaS ideas ranked by real demand signals. Browse by category, difficulty, and trending popularity to find your next project to build.",
+      "Vibe Code Ideas is a free directory of 500+ curated micro-SaaS and SaaS ideas ranked by real demand signals. Browse by category, difficulty, and trending popularity to find your next project to build.",
     siteName: "Vibe Code Ideas",
   },
 }
@@ -23,12 +23,12 @@ const homeFaqItems = [
   {
     question: "What is Vibe Code Ideas?",
     answer:
-      "Vibe Code Ideas is a free, curated directory of micro-SaaS and SaaS ideas sourced from across the internet. Each idea is ranked by real demand signals so indie hackers and developers can find validated project ideas to build.",
+      "Vibe Code Ideas was built by someone who was bored at work, wanted side hustle money, and had zero original ideas of their own. It's a free, curated directory of micro-SaaS and SaaS ideas scraped from the corners of the internet where real people complain about software that doesn't exist yet — ranked by demand signals so you can skip the brainstorming and go straight to building.",
   },
   {
     question: "How are SaaS ideas discovered?",
     answer:
-      "Vibe Code Ideas continuously scans forums, social media, and online communities for software ideas people are requesting. Ideas are then validated against demand signals like upvotes, comment volume, and search trends before being added to the directory.",
+      "We lurk in forums, subreddits, and online communities where people are openly begging for software that doesn't exist yet. Every complaint gets cross-checked against upvotes, comment volume, and search trends. If enough strangers are mad about the same missing tool, it becomes an idea in the directory.",
   },
   {
     question: "What categories of SaaS ideas are available?",
@@ -48,7 +48,7 @@ const homeFaqItems = [
   {
     question: "How many SaaS ideas are in the database?",
     answer:
-      "Vibe Code Ideas currently contains over 500 curated micro-SaaS and SaaS ideas, with new ideas added regularly as fresh opportunities are identified from online communities and trending discussions.",
+      "Over 500 and counting. New ones get added whenever more people post about problems they'd happily pay someone else to solve. The supply of bored, frustrated internet users is effectively infinite, so this number only goes up.",
   },
   {
     question: "What is a micro-SaaS idea?",
