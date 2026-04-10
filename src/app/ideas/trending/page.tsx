@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { IdeaListRow } from "@/components/IdeaListRow"
-import { getAggregateStats, getPercentile } from "@/lib/queries"
+import { getAggregateStats } from "@/lib/queries"
 import type { Idea } from "@/types"
 
 export const metadata: Metadata = {
@@ -55,11 +55,7 @@ export default async function TrendingPage() {
               key={idea.id}
               idea={idea}
               rank={index + 1}
-              popPercentile={
-                stats.popularity_scores.length > 0
-                  ? getPercentile(idea.popularity_score, stats.popularity_scores)
-                  : undefined
-              }
+              popThreshold={stats.popularity_threshold}
             />
           ))}
         </div>

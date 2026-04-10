@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og"
 import { createClient } from "@supabase/supabase-js"
 import { displayMentions } from "@/lib/utils"
-import { getPercentile, isPopular } from "@/lib/signal-utils"
+import { isPopularScore } from "@/lib/signal-utils"
 
 export const alt = "Vibe Code Ideas"
 export const size = { width: 1200, height: 630 }
@@ -67,10 +67,16 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
   // Scarcity badge: only p99+ ideas surface a "Popular" chip in the OG image.
   // Everyone else just gets the 3-column signals row, matching the site-wide
   // scarcity principle. See Knowledge/Midrank Percentile Computation.
+  //
+  // We compute the threshold inline here (rather than calling
+  // getAggregateStats) because opengraph-image.tsx runs in Next's edge-ish
+  // image route with its own Supabase client and no access to the shared
+  // module-level cache.
   const sortedScores = (allScores ?? []).map((r) => r.popularity_score ?? 0)
-  const popular = sortedScores.length > 0
-    ? isPopular(getPercentile(idea.popularity_score ?? 0, sortedScores))
-    : false
+  const n = sortedScores.length
+  const p99Index = n > 0 ? Math.max(0, Math.ceil(n * 0.99) - 1) : 0
+  const popularityThreshold = n > 0 ? sortedScores[p99Index] : 0
+  const popular = isPopularScore(idea.popularity_score ?? 0, popularityThreshold)
 
   return new ImageResponse(
     (

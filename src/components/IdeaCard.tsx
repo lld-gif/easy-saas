@@ -8,11 +8,11 @@ import type { Idea } from "@/types"
 
 interface IdeaCardProps {
   idea: Idea
-  /** 0-100 percentile rank of this idea's popularity_score vs. all active ideas */
-  popPercentile?: number
+  /** Server-computed p99 popularity_score threshold. Card renders PopularBadge iff idea.popularity_score >= this. */
+  popThreshold?: number
 }
 
-export function IdeaCard({ idea, popPercentile }: IdeaCardProps) {
+export function IdeaCard({ idea, popThreshold }: IdeaCardProps) {
   return (
     <Link href={`/ideas/${idea.slug}`}>
       <Card className="h-full hover:shadow-lg hover:border-input border-border bg-card transition-all duration-200 cursor-pointer">
@@ -47,7 +47,7 @@ export function IdeaCard({ idea, popPercentile }: IdeaCardProps) {
               justify-between keeps difficulty/mentions right-anchored. */}
           <div className="flex items-center justify-between gap-2">
             <span className="min-w-0">
-              <PopularBadge percentile={popPercentile} />
+              <PopularBadge score={idea.popularity_score} threshold={popThreshold} />
             </span>
             <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
               <DifficultyBadge difficulty={idea.difficulty} />

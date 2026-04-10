@@ -12,14 +12,13 @@ import { ShareButtons } from "@/components/ShareButtons"
 import {
   getIdeaBySlug,
   getAggregateStats,
-  getPercentile,
 } from "@/lib/queries"
 import {
   signalToPercentile,
   signalToColor,
   revenueToPercentile,
   revenueToColor,
-  isPopular,
+  isPopularScore,
 } from "@/lib/signal-utils"
 import { formatDate, displayMentions } from "@/lib/utils"
 
@@ -68,7 +67,15 @@ export default async function IdeaDetailPage({ params }: Props) {
     notFound()
   }
 
-  const popPercentile = getPercentile(idea.popularity_score, stats.popularity_scores)
+  // Cosmetic-only bar position for the Popularity SignalBar. The scarcity
+  // signal is carried entirely by the `<PopularBadge>` pill at the top —
+  // this percentile is just the bar fill and never drives the "Popular"
+  // label (which is gated on isPopularScore against the server threshold).
+  const popDisplayPct =
+    stats.max_score > 0
+      ? Math.min(100, Math.round((idea.popularity_score / stats.max_score) * 100))
+      : 0
+  const isIdeaPopular = isPopularScore(idea.popularity_score, stats.popularity_threshold)
   const mktPercentile = signalToPercentile(idea.market_signal)
   const revPercentile = revenueToPercentile(idea.revenue_potential)
 
@@ -82,7 +89,7 @@ export default async function IdeaDetailPage({ params }: Props) {
       "@type": "AggregateRating",
       ratingValue: idea.popularity_score.toFixed(1),
       ratingCount: displayMentions(idea.mention_count),
-      bestRating: stats.popularity_scores.length > 0 ? Math.max(...stats.popularity_scores).toFixed(1) : "100",
+      bestRating: stats.max_score > 0 ? stats.max_score.toFixed(1) : "100",
     },
   }
 
@@ -108,7 +115,11 @@ export default async function IdeaDetailPage({ params }: Props) {
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 mb-8">
         <CategoryBadge category={idea.category} />
         <DifficultyBadge difficulty={idea.difficulty} />
-        <PopularBadge percentile={popPercentile} variant="pill" />
+        <PopularBadge
+          score={idea.popularity_score}
+          threshold={stats.popularity_threshold}
+          variant="pill"
+        />
         {idea.tags.map((tag) => (
           <span key={tag} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-input">
             {tag}
@@ -134,8 +145,8 @@ export default async function IdeaDetailPage({ params }: Props) {
           <div>
             <SignalBar
               label="Popularity"
-              value={isPopular(popPercentile) ? "Popular" : ""}
-              percentile={popPercentile}
+              value={isIdeaPopular ? "Popular" : ""}
+              percentile={popDisplayPct}
               color="orange"
             />
           </div>

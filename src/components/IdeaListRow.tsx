@@ -8,11 +8,11 @@ import type { Idea } from "@/types"
 interface IdeaListRowProps {
   idea: Idea
   rank: number
-  /** 0-100 percentile rank of this idea's popularity_score vs. all active ideas */
-  popPercentile?: number
+  /** Server-computed p99 popularity_score threshold. Row renders PopularBadge iff idea.popularity_score >= this. */
+  popThreshold?: number
 }
 
-export function IdeaListRow({ idea, rank, popPercentile }: IdeaListRowProps) {
+export function IdeaListRow({ idea, rank, popThreshold }: IdeaListRowProps) {
   return (
     <Link
       href={`/ideas/${idea.slug}`}
@@ -42,7 +42,7 @@ export function IdeaListRow({ idea, rank, popPercentile }: IdeaListRowProps) {
             </svg>
             {[idea.category.replace('-', '/'), ...idea.tags.slice(0, 2)].join(' · ')}
           </div>
-          <PopularBadge percentile={popPercentile} />
+          <PopularBadge score={idea.popularity_score} threshold={popThreshold} />
         </div>
       </div>
 

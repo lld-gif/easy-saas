@@ -1,23 +1,34 @@
-import { isPopular } from "@/lib/signal-utils"
+import { isPopularScore } from "@/lib/signal-utils"
 
 interface PopularBadgeProps {
-  /** 0-100 percentile rank of this idea's popularity_score vs. all active ideas */
-  percentile: number | undefined
+  /** Raw popularity_score for this idea. Undefined/0 → no badge. */
+  score: number | undefined
+  /**
+   * Server-computed p99 threshold from `getAggregateStats()`. A single
+   * scalar — cheap to pass as a prop, no sorted-array drift. Undefined/0
+   * → badge never renders (safe default for cold starts).
+   */
+  threshold: number | undefined
   /** Visual variant — `inline` is compact for lists/cards, `pill` is a bordered chip */
   variant?: "inline" | "pill"
 }
 
 /**
- * Single scarcity signal for popular ideas. Renders only at p99+
- * (~1.6% of the corpus) — scarce enough that the badge means something.
- * Returns null for everything else so call sites can drop it inline
- * without conditional wrappers.
+ * Single scarcity signal for popular ideas. Renders only when the idea's
+ * popularity_score is at or above the server-computed p99 threshold (~1%
+ * of the corpus). Returns null for everything else so call sites can drop
+ * it inline without conditional wrappers.
  *
- * See Knowledge/Midrank Percentile Computation for the fidelity analysis
- * that drove the p99 threshold.
+ * See Knowledge/Midrank Percentile Computation for the full rationale.
+ * Note: earlier versions of this component accepted a client-side-computed
+ * percentile number — that caused a rank-1-to-~259 over-firing bug because
+ * the client was recomputing percentiles from a prop array that could drift
+ * between sorted reference and the rendered ideas. The score+threshold
+ * shape eliminates that whole failure mode.
  */
-export function PopularBadge({ percentile, variant = "inline" }: PopularBadgeProps) {
-  if (percentile === undefined || !isPopular(percentile)) return null
+export function PopularBadge({ score, threshold, variant = "inline" }: PopularBadgeProps) {
+  if (score === undefined || threshold === undefined) return null
+  if (!isPopularScore(score, threshold)) return null
 
   if (variant === "pill") {
     return (

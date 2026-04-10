@@ -199,13 +199,25 @@ export async function getTrendingIdeas(limit: number = 12): Promise<Idea[]> {
 }
 
 export interface AggregateStats {
-  popularity_scores: number[] // sorted ascending, for percentile lookup
+  /**
+   * Server-computed p99 popularity_score. Any idea whose score is >= this
+   * value qualifies as Popular. Single scalar is cheap to serialize across
+   * the server/client boundary — no ~2000-number array prop, no client-side
+   * percentile computation, no risk of drift between the idea's score and
+   * the reference array.
+   */
+  popularity_threshold: number
+  /** Max active score — used for schema.org bestRating on detail pages. */
+  max_score: number
   total: number
 }
 
 let _cachedStats: AggregateStats | null = null
 let _cacheTime = 0
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+// 60s TTL (was 5min). Short enough that a warm serverless container won't
+// serve stale threshold data across a formula/backfill deploy, long enough
+// that aggressive browsing doesn't hammer the DB.
+const CACHE_TTL = 60 * 1000
 
 export async function getAggregateStats(): Promise<AggregateStats> {
   if (_cachedStats && Date.now() - _cacheTime < CACHE_TTL) return _cachedStats
@@ -213,9 +225,10 @@ export async function getAggregateStats(): Promise<AggregateStats> {
   const supabase = await createClient()
   // Supabase/PostgREST defaults to 1000 rows per request. Without an explicit
   // limit, ordering by popularity_score ascending returns only the BOTTOM 1000
-  // scores — which made getPercentile() return 100 for every idea above that
-  // truncated max, firing the "Popular" badge across ~950 ideas instead of 32.
-  // Pick a ceiling well above any plausible active-idea count.
+  // scores — which previously made getPercentile() return 100 for every idea
+  // above that truncated max. We now compute the threshold once server-side
+  // and only ship the scalar to clients, but the full fetch is still required
+  // to find p99 correctly.
   const { data } = await supabase
     .from("ideas")
     .select("popularity_score")
@@ -224,15 +237,24 @@ export async function getAggregateStats(): Promise<AggregateStats> {
     .limit(100000)
 
   const scores = (data || []).map((d) => d.popularity_score ?? 0)
-  _cachedStats = { popularity_scores: scores, total: scores.length }
+  // scores is already sorted ascending. Nearest-rank p99: index at ceil(0.99*n)-1.
+  // For n=1969 this selects index 1949 (the 20th-from-top score). Any idea
+  // whose score is >= scores[1949] is in the top 20, matching the corpus
+  // validation in Knowledge/Midrank Percentile Computation.
+  const n = scores.length
+  const p99Index = n > 0 ? Math.max(0, Math.ceil(n * 0.99) - 1) : 0
+  const popularity_threshold = n > 0 ? scores[p99Index] : 0
+  const max_score = n > 0 ? scores[n - 1] : 0
+
+  _cachedStats = { popularity_threshold, max_score, total: n }
   _cacheTime = Date.now()
   return _cachedStats
 }
 
-// getPercentile moved to @/lib/signal-utils so it's usable from client
-// components. Re-exported here for backward compatibility with existing
-// server-component imports.
-export { getPercentile } from "@/lib/signal-utils"
+// Re-exported from @/lib/signal-utils for existing server-component imports.
+// Prefer `isPopularScore(score, threshold)` + server-computed threshold over
+// `getPercentile` — see Knowledge/Midrank Percentile Computation.
+export { getPercentile, isPopularScore } from "@/lib/signal-utils"
 
 /** Maps market_signal to a percentile-like value for display */
 export function signalToPercentile(signal: string): number {

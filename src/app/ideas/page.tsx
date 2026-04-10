@@ -55,7 +55,7 @@ export default async function IdeasPage({ searchParams }: Props) {
               view={filters.view ?? "card"}
               hasFilters={!!(filters.q || filters.popularity || filters.time)}
               hasCategory={!!filters.category}
-              popularityScores={stats.popularity_scores}
+              popularityThreshold={stats.popularity_threshold}
             />
           </Suspense>
         </div>

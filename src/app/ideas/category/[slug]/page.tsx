@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { CATEGORIES, getCategoryBySlug } from "@/lib/categories"
 import { IdeaListRow } from "@/components/IdeaListRow"
-import { getAggregateStats, getPercentile } from "@/lib/queries"
+import { getAggregateStats } from "@/lib/queries"
 import type { Idea } from "@/types"
 
 type Props = {
@@ -122,11 +122,7 @@ export default async function CategoryPage({ params }: Props) {
               key={idea.id}
               idea={idea}
               rank={index + 1}
-              popPercentile={
-                stats.popularity_scores.length > 0
-                  ? getPercentile(idea.popularity_score, stats.popularity_scores)
-                  : undefined
-              }
+              popThreshold={stats.popularity_threshold}
             />
           ))}
         </div>

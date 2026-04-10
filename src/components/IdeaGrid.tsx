@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button"
 import { IdeaCard } from "@/components/IdeaCard"
 import { IdeaListRow } from "@/components/IdeaListRow"
 import { EmptyState } from "@/components/EmptyState"
-import { getPercentile } from "@/lib/signal-utils"
 import type { Idea } from "@/types"
 
 interface IdeaGridProps {
@@ -11,14 +10,11 @@ interface IdeaGridProps {
   view: "card" | "list"
   hasFilters?: boolean
   hasCategory?: boolean
-  /** Sorted-ascending popularity_score array for percentile lookup */
-  popularityScores?: number[]
+  /** Server-computed p99 popularity_score threshold — scalar, not the full sorted array. */
+  popularityThreshold?: number
 }
 
-export function IdeaGrid({ ideas, view, hasFilters, hasCategory, popularityScores }: IdeaGridProps) {
-  const pctFor = (score: number) =>
-    popularityScores && popularityScores.length > 0 ? getPercentile(score, popularityScores) : undefined
-
+export function IdeaGrid({ ideas, view, hasFilters, hasCategory, popularityThreshold }: IdeaGridProps) {
   if (ideas.length === 0) {
     if (hasFilters) {
       return (
@@ -57,7 +53,7 @@ export function IdeaGrid({ ideas, view, hasFilters, hasCategory, popularityScore
             key={idea.id}
             idea={idea}
             rank={index + 1}
-            popPercentile={pctFor(idea.popularity_score)}
+            popThreshold={popularityThreshold}
           />
         ))}
       </div>
@@ -70,7 +66,7 @@ export function IdeaGrid({ ideas, view, hasFilters, hasCategory, popularityScore
         <IdeaCard
           key={idea.id}
           idea={idea}
-          popPercentile={pctFor(idea.popularity_score)}
+          popThreshold={popularityThreshold}
         />
       ))}
     </div>

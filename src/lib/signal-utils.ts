@@ -4,17 +4,29 @@
  * True if a 0-100 percentile qualifies as "Popular" — used to render the
  * single scarcity badge across cards, rows, detail sidebar, and OG images.
  *
- * Threshold = 99th percentile. Chosen because the underlying popularity_score
- * distribution is tight (stddev ~0.54 across 1,959 ideas) with 95%+ of the
- * corpus clustered within 1 point. Only p99+ are genuine outliers (2.5+ stddev
- * above the mean, multi-source + fresh + high mention count). At current
- * volume this yields ~32 badges — scarce enough to mean something, visible
- * enough that users encounter one while browsing.
+ * Threshold = 99th percentile. See Knowledge/Midrank Percentile Computation.
  *
- * See Knowledge/Midrank Percentile Computation for the fidelity analysis.
+ * Prefer `isPopularScore(score, threshold)` for rendering: it avoids shipping
+ * the entire sorted score array to the client and removes the client-side
+ * percentile computation from the hot path, which was the source of a
+ * rank-1-to-~259 over-firing bug in the feature/popular-badge branch.
  */
 export function isPopular(percentile: number): boolean {
   return percentile >= 99
+}
+
+/**
+ * True if a raw popularity_score is at or above the server-computed p99
+ * threshold. This is the correct primitive for UI rendering — the threshold
+ * is computed once on the server in `getAggregateStats()` and passed as a
+ * single number to client components. A score below the threshold (including
+ * 0 for ideas with no score yet) returns false.
+ *
+ * Guard: `threshold <= 0` → always false, so brand-new deployments with no
+ * indexed ideas don't light up every badge.
+ */
+export function isPopularScore(score: number, threshold: number): boolean {
+  return threshold > 0 && score >= threshold
 }
 
 /**
