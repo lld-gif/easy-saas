@@ -23,12 +23,12 @@ const homeFaqItems = [
   {
     question: "What is Vibe Code Ideas?",
     answer:
-      "Vibe Code Ideas is a free, AI-curated directory of micro-SaaS ideas sourced from across the internet. Each idea on Vibe Code Ideas is ranked by real demand signals so indie hackers and developers can find validated project ideas to build.",
+      "Vibe Code Ideas is a free, curated directory of micro-SaaS and SaaS ideas sourced from across the internet. Each idea is ranked by real demand signals so indie hackers and developers can find validated project ideas to build.",
   },
   {
     question: "How are SaaS ideas discovered?",
     answer:
-      "Vibe Code Ideas uses AI to continuously scan forums, social media, and online communities for software ideas people are requesting. Ideas are then validated against demand signals like upvotes, comment volume, and search trends before being added to the directory.",
+      "Vibe Code Ideas continuously scans forums, social media, and online communities for software ideas people are requesting. Ideas are then validated against demand signals like upvotes, comment volume, and search trends before being added to the directory.",
   },
   {
     question: "What categories of SaaS ideas are available?",
@@ -48,7 +48,7 @@ const homeFaqItems = [
   {
     question: "How many SaaS ideas are in the database?",
     answer:
-      "Vibe Code Ideas currently contains over 500 curated micro-SaaS ideas, with new ideas added regularly as the AI discovery engine identifies fresh opportunities from online communities and trending discussions.",
+      "Vibe Code Ideas currently contains over 500 curated micro-SaaS and SaaS ideas, with new ideas added regularly as fresh opportunities are identified from online communities and trending discussions.",
   },
   {
     question: "What is a micro-SaaS idea?",
