@@ -20,8 +20,17 @@ const TOP_CATEGORIES = [
 const SORT_OPTIONS = [
   { value: "trending", label: "Trending" },
   { value: "newest", label: "Newest" },
+  { value: "revenue", label: "Highest revenue" },
   { value: "easiest", label: "Easiest first" },
   { value: "recent", label: "Recent" },
+]
+
+const REVENUE_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "2k", label: "$2k+/mo" },
+  { value: "10k", label: "$10k+/mo" },
+  { value: "25k", label: "$25k+/mo" },
+  { value: "50k", label: "$50k+/mo" },
 ]
 
 
@@ -32,6 +41,7 @@ export function FilterBar() {
   const activeCategory = searchParams.get("category") ?? ""
   const activeSort = searchParams.get("sort") ?? "trending"
   const activeDifficulty = searchParams.get("difficulty") ?? ""
+  const activeRevenue = searchParams.get("revenue") ?? ""
 
   const setFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -92,6 +102,20 @@ export function FilterBar() {
             <option value="easy" className="bg-card text-foreground">Easy</option>
             <option value="medium" className="bg-card text-foreground">Medium</option>
             <option value="hard" className="bg-card text-foreground">Hard</option>
+          </select>
+        </div>
+
+        {/* Revenue filter */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Revenue:</span>
+          <select
+            value={activeRevenue}
+            onChange={(e) => setFilter("revenue", e.target.value)}
+            className="text-sm font-medium text-foreground bg-transparent border-none cursor-pointer focus:outline-none focus:ring-0 pr-6"
+          >
+            {REVENUE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value} className="bg-card text-foreground">{opt.label}</option>
+            ))}
           </select>
         </div>
       </div>

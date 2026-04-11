@@ -25,11 +25,12 @@ export function displayMentions(count: number): number {
   return count * 5 + (count % 4) + 1
 }
 
-import type { IdeaFilters, PopularityFilter, TimeFilter, SortOption } from "@/types"
+import type { IdeaFilters, PopularityFilter, TimeFilter, SortOption, RevenueFilter } from "@/types"
 
 const VALID_POPULARITY: PopularityFilter[] = ["all", "trending", "rising", "new"]
 const VALID_TIME: TimeFilter[] = ["all", "week", "month", "3months"]
-const VALID_SORT: SortOption[] = ["trending", "newest", "recent", "easiest"]
+const VALID_SORT: SortOption[] = ["trending", "newest", "recent", "easiest", "revenue"]
+const VALID_REVENUE: RevenueFilter[] = ["any", "2k", "10k", "25k", "50k"]
 const VALID_DIFFICULTY = ["easy", "medium", "hard"] as const
 const VALID_VIEW = ["card", "list"] as const
 
@@ -38,6 +39,7 @@ function validateEnum<T extends string>(value: unknown, valid: readonly T[], fal
 }
 
 export function parseSearchParams(params: Record<string, string | string[] | undefined>): IdeaFilters {
+  const revenueRaw = typeof params.revenue === "string" ? params.revenue : undefined
   return {
     q: typeof params.q === "string" ? params.q : undefined,
     category: typeof params.category === "string" ? params.category : undefined,
@@ -47,5 +49,11 @@ export function parseSearchParams(params: Record<string, string | string[] | und
     view: validateEnum(params.view, VALID_VIEW, "list"),
     cursor: typeof params.cursor === "string" ? params.cursor : undefined,
     difficulty: typeof params.difficulty === "string" && (VALID_DIFFICULTY as readonly string[]).includes(params.difficulty) ? params.difficulty as "easy" | "medium" | "hard" : undefined,
+    // Omit entirely when "any" or invalid so downstream query doesn't build a
+    // no-op WHERE clause. Undefined reads the same as "no filter" at the query
+    // layer, which matches existing patterns in this file.
+    revenue: revenueRaw && revenueRaw !== "any" && (VALID_REVENUE as readonly string[]).includes(revenueRaw)
+      ? revenueRaw as RevenueFilter
+      : undefined,
   }
 }
