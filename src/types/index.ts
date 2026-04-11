@@ -11,6 +11,13 @@ export interface Idea {
   market_signal: "strong" | "moderate" | "weak" | "unknown"
   competition_level: "low" | "medium" | "high" | "unknown"
   revenue_potential: string
+  /**
+   * Parsed upper bound of revenue_potential in USD/month. Generated column
+   * populated from the free-form range string at insert/update time.
+   * NULL for "unknown" or unparseable values. See
+   * supabase/migrations/012_revenue_upper_generated_column.sql.
+   */
+  revenue_upper_usd: number | null
   first_seen_at: string
   last_seen_at: string
   status: "active" | "needs_review" | "archived"
@@ -27,11 +34,19 @@ export interface IdeaSource {
   extracted_at: string
 }
 
-export type SortOption = "trending" | "newest" | "recent" | "easiest" | "popularity"
+export type SortOption = "trending" | "newest" | "recent" | "easiest" | "popularity" | "revenue"
 
 export type PopularityFilter = "all" | "trending" | "rising" | "new"
 
 export type TimeFilter = "all" | "week" | "month" | "3months"
+
+/**
+ * Revenue-tier filter. Values are the minimum upper-bound USD/month an idea's
+ * revenue_upper_usd must meet. "any" and undefined mean no filter applied.
+ * Thresholds chosen to match the scarcity distribution surfaced by the
+ * 2026-04-10 badge investigation — see Projects/Vibe Code Ideas cont. 3.
+ */
+export type RevenueFilter = "any" | "2k" | "10k" | "25k" | "50k"
 
 export interface IdeaFilters {
   q?: string
@@ -42,6 +57,7 @@ export interface IdeaFilters {
   view?: "card" | "list"
   cursor?: string
   difficulty?: "easy" | "medium" | "hard"
+  revenue?: RevenueFilter
 }
 
 export interface AppUser {
