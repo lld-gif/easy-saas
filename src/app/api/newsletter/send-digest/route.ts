@@ -1,162 +1,146 @@
-import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-import { Resend } from "resend"
-import { displayMentions } from "@/lib/utils"
+/**
+ * Newsletter send-digest cron route.
+ *
+ * Auth paths:
+ * - Cron: Authorization: Bearer ${CRON_SECRET}  → sends to all subscribers
+ * - Dry-run: ?dryRun=1 with cron auth            → returns HTML + data preview,
+ *                                                  does NOT touch Resend
+ *
+ * The dry-run path lets admins smoke-test the template + data layer
+ * locally (or on a preview deploy) without spamming subscribers. Output
+ * is a JSON payload with the generated HTML, the digest data, and the
+ * subscriber count that WOULD have been notified.
+ *
+ * Data and template are factored into @/lib/newsletter for reuse and
+ * testability. This route is just glue: auth → fetch → render → send.
+ */
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { NextResponse } from "next/server"
+import { Resend } from "resend"
+import { getDigestData, getActiveSubscribers } from "@/lib/newsletter/queries"
+import { renderDigestEmail, digestSubject } from "@/lib/newsletter/email-template"
+
+export const dynamic = "force-dynamic"
+
+const BATCH_SIZE = 50
 
 export async function GET(request: Request) {
-  // Verify cron secret
+  // --- Auth check -----------------------------------------------------------
   const authHeader = request.headers.get("authorization")
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const url = new URL(request.url)
+  const dryRun = url.searchParams.get("dryRun") === "1"
+
+  // --- Fetch digest data ----------------------------------------------------
+  const data = await getDigestData()
+
+  if (!data.featured) {
+    return NextResponse.json({
+      success: true,
+      message: "No active ideas to feature — skipping digest",
+      sent: 0,
+    })
+  }
+
+  // --- Render email (template-only, no subscriber embedded yet) ------------
+  // We render with a placeholder unsubscribe URL that gets replaced
+  // per-recipient inside the batch loop. This keeps the expensive
+  // render out of the per-recipient path.
+  const htmlTemplate = renderDigestEmail(data, {
+    unsubscribeUrl: "https://vibecodeideas.ai/api/newsletter/unsubscribe?email={{EMAIL_PLACEHOLDER}}",
+  })
+
+  const subject = digestSubject(data)
+
+  // --- Dry-run path: return preview payload, do NOT send --------------------
+  if (dryRun) {
+    const subscriberCount = (await getActiveSubscribers()).length
+    return NextResponse.json(
+      {
+        dryRun: true,
+        subject,
+        subscriberCount,
+        ideaCount:
+          (data.featured ? 1 : 0) +
+          data.trending.length +
+          (data.revenueSpotlight ? 1 : 0) +
+          data.categoryHighlights.length,
+        data: {
+          featured: data.featured && {
+            id: data.featured.id,
+            title: data.featured.title,
+            category: data.featured.category,
+            revenue_upper_usd: data.featured.revenue_upper_usd,
+          },
+          trending: data.trending.map((i) => ({
+            id: i.id,
+            title: i.title,
+            category: i.category,
+          })),
+          revenueSpotlight: data.revenueSpotlight && {
+            id: data.revenueSpotlight.id,
+            title: data.revenueSpotlight.title,
+            revenue_upper_usd: data.revenueSpotlight.revenue_upper_usd,
+          },
+          categoryHighlights: data.categoryHighlights.map((c) => ({
+            category: c.category,
+            title: c.idea.title,
+          })),
+        },
+        htmlLength: htmlTemplate.length,
+        html: htmlTemplate,
+      },
+      { status: 200 }
+    )
+  }
+
+  // --- Real send: fetch subscribers, batch through Resend ------------------
   const resendKey = process.env.RESEND_API_KEY
   if (!resendKey) {
-    return NextResponse.json({ error: "RESEND_API_KEY not configured" }, { status: 500 })
+    return NextResponse.json(
+      { error: "RESEND_API_KEY not configured" },
+      { status: 500 }
+    )
   }
-
   const resend = new Resend(resendKey)
 
-  // Fetch top 5 trending ideas
-  const { data: ideas, error: ideasError } = await supabase
-    .from("ideas")
-    .select("title, summary, slug, category, mention_count")
-    .eq("status", "active")
-    .order("popularity_score", { ascending: false })
-    .limit(5)
-
-  if (ideasError) {
-    console.error("Failed to fetch ideas for digest:", ideasError)
-    return NextResponse.json({ error: "Failed to fetch ideas" }, { status: 500 })
+  const subscribers = await getActiveSubscribers()
+  if (subscribers.length === 0) {
+    return NextResponse.json({
+      success: true,
+      message: "No active subscribers",
+      sent: 0,
+    })
   }
 
-  // Fetch all active subscribers
-  const { data: subscribers, error: subsError } = await supabase
-    .from("newsletter_subscribers")
-    .select("email")
-    .eq("status", "active")
-
-  if (subsError) {
-    console.error("Failed to fetch subscribers:", subsError)
-    return NextResponse.json({ error: "Failed to fetch subscribers" }, { status: 500 })
-  }
-
-  if (!subscribers || subscribers.length === 0) {
-    return NextResponse.json({ success: true, message: "No subscribers", sent: 0 })
-  }
-
-  // Build email HTML
-  const baseUrl = "https://vibecodeideas.ai"
-  const allIdeas = ideas || []
-  const featured = allIdeas[0]
-  const quickPicks = allIdeas.slice(1)
-
-  // Featured idea section
-  const featuredHtml = featured
-    ? `
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 32px;">
-        <tr>
-          <td style="padding: 24px; background-color: #f8fafc; border-radius: 12px;">
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td>
-                  <span style="display: inline-block; padding: 3px 10px; background-color: #eef2ff; color: #4338ca; font-size: 11px; font-weight: 600; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">${featured.category}</span>
-                  <h2 style="margin: 12px 0 8px; font-size: 20px; color: #111827; line-height: 1.3;">${featured.title}</h2>
-                  <p style="margin: 0 0 16px; font-size: 14px; color: #6b7280; line-height: 1.6;">
-                    ${featured.summary.slice(0, 300)}${featured.summary.length > 300 ? "..." : ""}
-                  </p>
-                  <p style="margin: 0 0 20px; font-size: 13px; color: #9ca3af;">
-                    ${displayMentions(featured.mention_count)} mentions across the web
-                  </p>
-                  <a href="${baseUrl}/ideas/${featured.slug}" style="display: inline-block; padding: 10px 24px; background-color: #f97316; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600;">Read more &rarr;</a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>`
-    : ""
-
-  // Quick picks section
-  const quickPicksHtml =
-    quickPicks.length > 0
-      ? `
-      <h3 style="margin: 0 0 16px; font-size: 14px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600;">Quick Picks</h3>
-      <table style="width: 100%; border-collapse: collapse;">
-        ${quickPicks
-          .map(
-            (idea) => `
-        <tr>
-          <td style="padding: 14px 0; border-bottom: 1px solid #f1f5f9;">
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="vertical-align: middle;">
-                  <a href="${baseUrl}/ideas/${idea.slug}" style="font-size: 15px; color: #111827; text-decoration: none; font-weight: 500; line-height: 1.4;">${idea.title}</a>
-                  <span style="display: inline-block; margin-left: 8px; padding: 2px 8px; background-color: #f1f5f9; color: #64748b; font-size: 11px; font-weight: 500; border-radius: 99px;">${idea.category}</span>
-                </td>
-                <td style="text-align: right; white-space: nowrap; vertical-align: middle; padding-left: 12px;">
-                  <span style="font-size: 12px; color: #9ca3af;">${displayMentions(idea.mention_count)} mentions</span>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>`
-          )
-          .join("")}
-      </table>`
-      : ""
-
-  const emailHtml = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #111827; background-color: #ffffff;">
-  <div style="text-align: center; margin-bottom: 32px;">
-    <h1 style="font-size: 22px; margin-bottom: 4px; color: #111827;">This Week's Hottest SaaS Idea</h1>
-    <p style="color: #6b7280; font-size: 14px; margin-top: 0;">Curated from across the internet by <a href="${baseUrl}" style="color: #f97316; text-decoration: none; font-weight: 500;">Vibe Code Ideas</a></p>
-  </div>
-  ${featuredHtml}
-  ${quickPicksHtml}
-  <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
-    <a href="${baseUrl}/ideas" style="display: inline-block; padding: 10px 24px; background-color: #f97316; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600;">Browse all ideas</a>
-  </div>
-  <p style="margin-top: 32px; font-size: 12px; color: #9ca3af; text-align: center;">
-    You're receiving this because you subscribed at vibecodeideas.ai.<br/>
-    <a href="${baseUrl}/api/newsletter/unsubscribe?email={{email}}" style="color: #9ca3af; text-decoration: underline;">Unsubscribe</a>
-  </p>
-</body>
-</html>`
-
-  // Send to each subscriber via Resend
   let sent = 0
   let failed = 0
 
-  // Batch send — Resend supports up to 100 emails per batch
-  const batchSize = 50
-  for (let i = 0; i < subscribers.length; i += batchSize) {
-    const batch = subscribers.slice(i, i + batchSize)
-
+  for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
+    const batch = subscribers.slice(i, i + BATCH_SIZE)
     const results = await Promise.allSettled(
-      batch.map((sub) =>
+      batch.map((email) =>
         resend.emails.send({
           from: "Vibe Code Ideas <digest@resend.dev>",
-          to: sub.email,
-          subject: `\u{1F680} This Week's Hottest SaaS Idea + 4 Quick Picks`,
-          html: emailHtml.replace("{{email}}", encodeURIComponent(sub.email)),
+          to: email,
+          subject,
+          html: htmlTemplate.replace(
+            "{{EMAIL_PLACEHOLDER}}",
+            encodeURIComponent(email)
+          ),
         })
       )
     )
 
     for (const result of results) {
-      if (result.status === "fulfilled") sent++
-      else {
+      if (result.status === "fulfilled") {
+        sent++
+      } else {
         failed++
-        console.error("Resend error:", result.reason)
+        console.error("[newsletter] Resend error:", result.reason)
       }
     }
   }
@@ -166,6 +150,11 @@ export async function GET(request: Request) {
     sent,
     failed,
     subscriber_count: subscribers.length,
-    idea_count: ideas?.length ?? 0,
+    subject,
+    idea_count:
+      (data.featured ? 1 : 0) +
+      data.trending.length +
+      (data.revenueSpotlight ? 1 : 0) +
+      data.categoryHighlights.length,
   })
 }
