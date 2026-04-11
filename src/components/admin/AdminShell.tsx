@@ -40,6 +40,16 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    label: "Dedup",
+    href: "/admin/dedup",
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="6" width="13" height="13" rx="2" />
+        <rect x="9" y="2" width="13" height="13" rx="2" />
+      </svg>
+    ),
+  },
 ]
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
