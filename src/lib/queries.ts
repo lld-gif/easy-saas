@@ -313,46 +313,24 @@ export async function getAggregateStats(): Promise<AggregateStats> {
 // Re-exported from @/lib/signal-utils for existing server-component imports.
 // Prefer `isPopularScore(score, threshold)` + server-computed threshold over
 // `getPercentile` — see Knowledge/Midrank Percentile Computation.
-export { getPercentile, isPopularScore } from "@/lib/signal-utils"
+export {
+  getPercentile,
+  isPopularScore,
+  signalToPercentile,
+  signalToColor,
+  revenueToPercentile,
+  revenueToColor,
+} from "@/lib/signal-utils"
 
-/** Maps market_signal to a percentile-like value for display */
-export function signalToPercentile(signal: string): number {
-  switch (signal) {
-    case "strong": return 85
-    case "moderate": return 50
-    case "weak": return 20
-    default: return 0
-  }
-}
-
-/** Maps revenue_potential string to a percentile-like value */
-export function revenueToPercentile(revenue: string): number {
-  if (revenue.includes("50k") || revenue.includes("100k")) return 95
-  if (revenue.includes("10k")) return 75
-  if (revenue.includes("5k")) return 60
-  if (revenue.includes("2k")) return 45
-  if (revenue.includes("1k")) return 30
-  if (revenue.includes("500")) return 20
-  return 0 // unknown
-}
-
-/** Maps revenue_potential string to a color */
-export function revenueToColor(revenue: string): "green" | "orange" | "blue" | "gray" {
-  if (revenue.includes("10k") || revenue.includes("50k") || revenue.includes("100k")) return "green"
-  if (revenue.includes("2k") || revenue.includes("5k")) return "orange"
-  if (revenue.includes("500") || revenue.includes("1k")) return "blue"
-  return "gray"
-}
-
-/** Maps market_signal to a display color */
-export function signalToColor(signal: string): "green" | "orange" | "red" | "gray" {
-  switch (signal) {
-    case "strong": return "green"
-    case "moderate": return "orange"
-    case "weak": return "red"
-    default: return "gray"
-  }
-}
+// NOTE: The previous in-file copies of signalToPercentile, signalToColor,
+// revenueToPercentile, and revenueToColor were substring-based and would
+// mis-categorize ranges like "$10k-50k/mo" (the `.includes("10k")` match
+// fired even when the upper bound was much higher). They were dead code —
+// every consumer (IdeaSignals, the slug detail page, etc.) already imported
+// from @/lib/signal-utils, which has a numeric `parseRevenueUpperBound()`
+// implementation. The re-exports above preserve the public import surface
+// of this module so anything grepping for
+// `from "@/lib/queries"` still works, but all logic lives in signal-utils.
 
 export async function getIdeaCount(): Promise<number> {
   const supabase = await createClient()
