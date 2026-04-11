@@ -87,6 +87,21 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
     }
   }
 
+  // Revenue-tier filter. Thresholds map to the parsed upper bound stored in
+  // the generated column revenue_upper_usd (see migration 012). Undefined or
+  // "any" is handled upstream in parseSearchParams by dropping the field, so
+  // reaching this branch always means a real filter value.
+  if (filters.revenue) {
+    const threshold: Record<Exclude<typeof filters.revenue, undefined>, number> = {
+      any: 0,
+      "2k": 2000,
+      "10k": 10000,
+      "25k": 25000,
+      "50k": 50000,
+    }
+    query = query.gte("revenue_upper_usd", threshold[filters.revenue])
+  }
+
   // Sort
   switch (sort) {
     case "trending":
@@ -104,13 +119,21 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
     case "popularity":
       query = query.order("popularity_score", { ascending: false }).order("id", { ascending: false })
       break
+    case "revenue":
+      // NULLS LAST so "unknown"/unparseable revenue ranges don't dominate the
+      // top of the list when descending. The partial index
+      // idx_ideas_revenue_upper_usd_active matches this exact ORDER BY.
+      query = query
+        .order("revenue_upper_usd", { ascending: false, nullsFirst: false })
+        .order("id", { ascending: false })
+      break
   }
 
   // Cursor pagination
   if (filters.cursor) {
     const { data: cursorRow } = await supabase
       .from("ideas")
-      .select("id, mention_count, first_seen_at, last_seen_at, difficulty, popularity_score")
+      .select("id, mention_count, first_seen_at, last_seen_at, difficulty, popularity_score, revenue_upper_usd")
       .eq("id", filters.cursor)
       .single()
 
@@ -141,6 +164,22 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
             `popularity_score.lt.${cursorRow.popularity_score || 0},and(popularity_score.eq.${cursorRow.popularity_score || 0},id.lt.${cursorRow.id})`
           )
           break
+        case "revenue": {
+          // Revenue sort is DESC NULLS LAST, so pagination has two regimes:
+          //   (1) cursor row has a value → next page = rows with strictly
+          //       lower value, OR same value with smaller id, OR rows with
+          //       NULL (the NULL tail comes after all non-null values)
+          //   (2) cursor row is NULL → we're already in the NULL tail, so
+          //       next page = NULL rows with smaller id
+          if (cursorRow.revenue_upper_usd === null) {
+            query = query.is("revenue_upper_usd", null).lt("id", cursorRow.id)
+          } else {
+            query = query.or(
+              `revenue_upper_usd.lt.${cursorRow.revenue_upper_usd},and(revenue_upper_usd.eq.${cursorRow.revenue_upper_usd},id.lt.${cursorRow.id}),revenue_upper_usd.is.null`
+            )
+          }
+          break
+        }
       }
     }
   }
