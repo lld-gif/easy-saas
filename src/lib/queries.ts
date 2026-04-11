@@ -199,34 +199,82 @@ export async function getTrendingIdeas(limit: number = 12): Promise<Idea[]> {
 }
 
 export interface AggregateStats {
-  popularity_scores: number[] // sorted ascending, for percentile lookup
+  /**
+   * Server-computed p99 popularity_score. Any idea whose score is >= this
+   * value qualifies as Popular. Single scalar is cheap to serialize across
+   * the server/client boundary — no ~2000-number array prop, no client-side
+   * percentile computation, no risk of drift between the idea's score and
+   * the reference array.
+   */
+  popularity_threshold: number
+  /** Max active score — used for schema.org bestRating on detail pages. */
+  max_score: number
   total: number
 }
 
 let _cachedStats: AggregateStats | null = null
 let _cacheTime = 0
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+// 60s TTL (was 5min). Short enough that a warm serverless container won't
+// serve stale threshold data across a formula/backfill deploy, long enough
+// that aggressive browsing doesn't hammer the DB.
+const CACHE_TTL = 60 * 1000
 
 export async function getAggregateStats(): Promise<AggregateStats> {
   if (_cachedStats && Date.now() - _cacheTime < CACHE_TTL) return _cachedStats
 
   const supabase = await createClient()
-  const { data } = await supabase
-    .from("ideas")
-    .select("popularity_score")
-    .eq("status", "active")
-    .order("popularity_score", { ascending: true })
+  // Compute the aggregate where the data lives. The previous version fetched
+  // every active idea's popularity_score and computed p99 in Node after the
+  // fact — but PostgREST silently clamped the response to ~1766 rows (short
+  // of the true 1969-row corpus) despite an explicit `.limit(100000)`. The
+  // p99 of that truncated sample was ~4.07, making ~200 mid-ranked ideas
+  // qualify as Popular instead of the top ~20.
+  //
+  // Root cause is architectural: a client-requested limit cannot override a
+  // server-configured max-rows ceiling. Any aggregate derived from a fetched
+  // row set is vulnerable to transport truncation. The fix is to compute the
+  // aggregate inside Postgres and ship only the scalar — zero rows across
+  // the wire, no truncation surface, one roundtrip.
+  //
+  // See supabase/migrations/011_aggregate_stats_rpc.sql and
+  // Knowledge/Midrank Percentile Computation (Fifth fix).
+  const { data, error } = await supabase.rpc("get_aggregate_stats")
 
-  const scores = (data || []).map((d) => d.popularity_score ?? 0)
-  _cachedStats = { popularity_scores: scores, total: scores.length }
+  if (error || !data || data.length === 0) {
+    if (error) console.error("getAggregateStats RPC failed:", error)
+    // Safe defaults: zero threshold → isPopularScore() always returns false,
+    // so cold starts / failed calls never fire the badge on everything.
+    const fallback: AggregateStats = {
+      popularity_threshold: 0,
+      max_score: 0,
+      total: 0,
+    }
+    _cachedStats = fallback
+    _cacheTime = Date.now()
+    return fallback
+  }
+
+  // Postgres `numeric` and `bigint` come back as strings over the wire —
+  // coerce explicitly so downstream comparisons against JS `number` scores
+  // don't silently string-compare.
+  const row = data[0] as {
+    popularity_threshold: number | string
+    max_score: number | string
+    total: number | string
+  }
+  _cachedStats = {
+    popularity_threshold: Number(row.popularity_threshold) || 0,
+    max_score: Number(row.max_score) || 0,
+    total: Number(row.total) || 0,
+  }
   _cacheTime = Date.now()
   return _cachedStats
 }
 
-// getPercentile moved to @/lib/signal-utils so it's usable from client
-// components. Re-exported here for backward compatibility with existing
-// server-component imports.
-export { getPercentile } from "@/lib/signal-utils"
+// Re-exported from @/lib/signal-utils for existing server-component imports.
+// Prefer `isPopularScore(score, threshold)` + server-computed threshold over
+// `getPercentile` — see Knowledge/Midrank Percentile Computation.
+export { getPercentile, isPopularScore } from "@/lib/signal-utils"
 
 /** Maps market_signal to a percentile-like value for display */
 export function signalToPercentile(signal: string): number {

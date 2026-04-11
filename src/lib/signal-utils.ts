@@ -1,22 +1,43 @@
 /** Pure utility functions for signal display — safe for client components */
 
 /**
- * Format a 0-100 percentile as a human-readable tier label.
- * Uses five buckets with a real middle band so mid-pack ideas don't
- * all read as "Bottom X%":
- *   ≥ 90 → "Top 10%"
- *   ≥ 75 → "Top 25%"
- *   ≥ 40 → "Average"
- *   ≥ 15 → "Below Avg"
- *   <15  → "Bottom 15%"
+ * True if a 0-100 percentile qualifies as "Popular" — used to render the
+ * single scarcity badge across cards, rows, detail sidebar, and OG images.
+ *
+ * Threshold = 99th percentile. See Knowledge/Midrank Percentile Computation.
+ *
+ * Prefer `isPopularScore(score, threshold)` for rendering: it avoids shipping
+ * the entire sorted score array to the client and removes the client-side
+ * percentile computation from the hot path, which was the source of a
+ * rank-1-to-~259 over-firing bug in the feature/popular-badge branch.
+ */
+export function isPopular(percentile: number): boolean {
+  return percentile >= 99
+}
+
+/**
+ * True if a raw popularity_score is at or above the server-computed p99
+ * threshold. This is the correct primitive for UI rendering — the threshold
+ * is computed once on the server in `getAggregateStats()` and passed as a
+ * single number to client components. A score below the threshold (including
+ * 0 for ideas with no score yet) returns false.
+ *
+ * Guard: `threshold <= 0` → always false, so brand-new deployments with no
+ * indexed ideas don't light up every badge.
+ */
+export function isPopularScore(score: number, threshold: number): boolean {
+  return threshold > 0 && score >= threshold
+}
+
+/**
+ * @deprecated Use `isPopular()` and render a `<PopularBadge>` instead.
+ * Retained so unused imports don't break the build during the migration.
+ * The old five-tier labels ("Top 10%" etc.) were misleading because the
+ * popularity_score distribution lacks the fidelity to distinguish mid-pack
+ * ideas meaningfully — see Knowledge/Midrank Percentile Computation.
  */
 export function formatPercentileLabel(percentile: number): string {
-  const clamped = Math.max(0, Math.min(100, percentile))
-  if (clamped >= 90) return "Top 10%"
-  if (clamped >= 75) return "Top 25%"
-  if (clamped >= 40) return "Average"
-  if (clamped >= 15) return "Below Avg"
-  return "Bottom 15%"
+  return isPopular(percentile) ? "Popular" : ""
 }
 
 /**

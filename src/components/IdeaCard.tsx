@@ -3,16 +3,16 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { IdeaIcon } from "@/components/IdeaIcon"
 import { MentionBadge } from "@/components/MentionBadge"
 import { DifficultyBadge } from "@/components/DifficultyBadge"
-import { formatPercentileLabel } from "@/lib/signal-utils"
+import { PopularBadge } from "@/components/PopularBadge"
 import type { Idea } from "@/types"
 
 interface IdeaCardProps {
   idea: Idea
-  /** 0-100 percentile rank of this idea's popularity_score vs. all active ideas */
-  popPercentile?: number
+  /** Server-computed p99 popularity_score threshold. Card renders PopularBadge iff idea.popularity_score >= this. */
+  popThreshold?: number
 }
 
-export function IdeaCard({ idea, popPercentile }: IdeaCardProps) {
+export function IdeaCard({ idea, popThreshold }: IdeaCardProps) {
   return (
     <Link href={`/ideas/${idea.slug}`}>
       <Card className="h-full hover:shadow-lg hover:border-input border-border bg-card transition-all duration-200 cursor-pointer">
@@ -41,16 +41,14 @@ export function IdeaCard({ idea, popPercentile }: IdeaCardProps) {
             </span>
           </div>
 
-          {/* Popularity + Difficulty + Mentions — aligned row */}
+          {/* Popularity + Difficulty + Mentions — aligned row.
+              Wrapper span keeps the flex slot occupied even when
+              PopularBadge returns null (~98% of cards), so
+              justify-between keeps difficulty/mentions right-anchored. */}
           <div className="flex items-center justify-between gap-2">
-            {popPercentile !== undefined && (
-              <div className="flex items-center gap-1 text-xs text-orange-500">
-                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12.2l-4.2 2.3.8-4.7L1.2 6.5l4.7-.7z" />
-                </svg>
-                <span className="font-medium">{formatPercentileLabel(popPercentile)}</span>
-              </div>
-            )}
+            <span className="min-w-0">
+              <PopularBadge score={idea.popularity_score} threshold={popThreshold} />
+            </span>
             <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
               <DifficultyBadge difficulty={idea.difficulty} />
               <MentionBadge count={idea.mention_count} />

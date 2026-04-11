@@ -4,7 +4,7 @@ import { HeroSection } from "@/components/HeroSection"
 import { IdeaListRow } from "@/components/IdeaListRow"
 import { HomeFAQ } from "@/components/HomeFAQ"
 
-import { getTrendingIdeas, getIdeaCount, getAggregateStats, getPercentile } from "@/lib/queries"
+import { getTrendingIdeas, getIdeaCount, getAggregateStats } from "@/lib/queries"
 import { CATEGORIES } from "@/lib/categories"
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -131,11 +131,7 @@ export default async function Home() {
                   key={idea.id}
                   idea={idea}
                   rank={index + 1}
-                  popPercentile={
-                    stats.popularity_scores.length > 0
-                      ? getPercentile(idea.popularity_score, stats.popularity_scores)
-                      : undefined
-                  }
+                  popThreshold={stats.popularity_threshold}
                 />
               ))}
             </div>

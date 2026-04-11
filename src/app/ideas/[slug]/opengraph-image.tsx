@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og"
 import { createClient } from "@supabase/supabase-js"
 import { displayMentions } from "@/lib/utils"
-import { getPercentile, formatPercentileLabel } from "@/lib/signal-utils"
+import { isPopularScore } from "@/lib/signal-utils"
 
 export const alt = "Vibe Code Ideas"
 export const size = { width: 1200, height: 630 }
@@ -34,17 +34,21 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
 
-  const [{ data: idea }, { data: allScores }] = await Promise.all([
+  const [{ data: idea }, { data: statsRows }] = await Promise.all([
     supabase
       .from("ideas")
       .select("title, category, mention_count, market_signal, difficulty, popularity_score")
       .eq("slug", slug)
       .single(),
-    supabase
-      .from("ideas")
-      .select("popularity_score")
-      .eq("status", "active")
-      .order("popularity_score", { ascending: true }),
+    // Call the server-side aggregate RPC instead of fetching all scores and
+    // computing the threshold in JS. The prior approach used
+    // `.select("popularity_score").limit(100000)` and hit PostgREST's
+    // server-side max-rows ceiling — the client-requested limit cannot
+    // override the server cap, so the response was silently truncated and
+    // the computed p99 was ~p90 of the true distribution. The RPC computes
+    // percentile_disc(0.99) directly in Postgres and returns one scalar.
+    // See supabase/migrations/011_aggregate_stats_rpc.sql.
+    supabase.rpc("get_aggregate_stats"),
   ])
 
   if (!idea) {
@@ -60,10 +64,14 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
 
   const marketLabel = idea.market_signal === "unknown" ? "Unknown" : idea.market_signal.charAt(0).toUpperCase() + idea.market_signal.slice(1)
 
-  const sortedScores = (allScores ?? []).map((r) => r.popularity_score ?? 0)
-  const popLabel = sortedScores.length > 0
-    ? formatPercentileLabel(getPercentile(idea.popularity_score ?? 0, sortedScores))
-    : "—"
+  // Scarcity badge: only p99+ ideas surface a "Popular" chip in the OG image.
+  // Everyone else just gets the 3-column signals row, matching the site-wide
+  // scarcity principle. See Knowledge/Midrank Percentile Computation.
+  const statsRow = (statsRows ?? [])[0] as
+    | { popularity_threshold: number | string }
+    | undefined
+  const popularityThreshold = Number(statsRow?.popularity_threshold ?? 0) || 0
+  const popular = isPopularScore(idea.popularity_score ?? 0, popularityThreshold)
 
   return new ImageResponse(
     (
@@ -102,8 +110,8 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
           </div>
         </div>
 
-        {/* Category badge */}
-        <div style={{ display: "flex", marginBottom: "16px" }}>
+        {/* Category badge + optional Popular chip (p99+ only) */}
+        <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
           <div
             style={{
               background: "#27272a",
@@ -119,6 +127,26 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
           >
             {idea.category}
           </div>
+          {popular && (
+            <div
+              style={{
+                background: "rgba(249, 115, 22, 0.12)",
+                border: "1px solid rgba(249, 115, 22, 0.4)",
+                color: "#f97316",
+                fontSize: "16px",
+                fontWeight: 600,
+                padding: "6px 16px",
+                borderRadius: "20px",
+                textTransform: "uppercase" as const,
+                letterSpacing: "0.05em",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              ★ Popular
+            </div>
+          )}
         </div>
 
         {/* Title */}
@@ -148,10 +176,6 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
           <div style={{ display: "flex", flexDirection: "column" as const, gap: "4px" }}>
             <div style={{ display: "flex", fontSize: "14px", color: "#71717a", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Mentions</div>
             <div style={{ display: "flex", fontSize: "28px", fontWeight: 700, color: "#fafafa" }}>{displayMentions(idea.mention_count)}</div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" as const, gap: "4px" }}>
-            <div style={{ display: "flex", fontSize: "14px", color: "#71717a", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Popularity</div>
-            <div style={{ display: "flex", fontSize: "28px", fontWeight: 700, color: "#f97316" }}>{popLabel}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" as const, gap: "4px" }}>
             <div style={{ display: "flex", fontSize: "14px", color: "#71717a", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>Market</div>

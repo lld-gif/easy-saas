@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation"
 import { IdeaCard } from "@/components/IdeaCard"
 import { IdeaListRow } from "@/components/IdeaListRow"
 import { EmptyState } from "@/components/EmptyState"
-import { getPercentile } from "@/lib/signal-utils"
 import type { Idea } from "@/types"
 import { createClient } from "@/lib/supabase/client"
 
@@ -15,8 +14,8 @@ interface InfiniteIdeasProps {
   view: "card" | "list"
   hasFilters?: boolean
   hasCategory?: boolean
-  /** Sorted-ascending popularity_score array for percentile lookup */
-  popularityScores?: number[]
+  /** Server-computed p99 popularity_score threshold — scalar, not the full sorted array. */
+  popularityThreshold?: number
 }
 
 const PAGE_SIZE = 24
@@ -27,16 +26,13 @@ export function InfiniteIdeas({
   view,
   hasFilters,
   hasCategory,
-  popularityScores,
+  popularityThreshold,
 }: InfiniteIdeasProps) {
   const [ideas, setIdeas] = useState<Idea[]>(initialIdeas)
   const [cursor, setCursor] = useState<string | null>(initialCursor)
   const [loading, setLoading] = useState(false)
   const observerRef = useRef<HTMLDivElement>(null)
   const searchParams = useSearchParams()
-
-  const pctFor = (score: number) =>
-    popularityScores && popularityScores.length > 0 ? getPercentile(score, popularityScores) : undefined
 
   // Reset when filters change (SSR will provide new initialIdeas)
   useEffect(() => {
@@ -196,7 +192,7 @@ export function InfiniteIdeas({
               key={idea.id}
               idea={idea}
               rank={index + 1}
-              popPercentile={pctFor(idea.popularity_score)}
+              popThreshold={popularityThreshold}
             />
           ))}
         </div>
@@ -206,7 +202,7 @@ export function InfiniteIdeas({
             <IdeaCard
               key={idea.id}
               idea={idea}
-              popPercentile={pctFor(idea.popularity_score)}
+              popThreshold={popularityThreshold}
             />
           ))}
         </div>

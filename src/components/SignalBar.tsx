@@ -1,9 +1,14 @@
 /**
  * Horizontal micro-bar showing a value positioned against the aggregate.
  * Used for popularity score, market signal, revenue potential on cards and detail pages.
+ *
+ * Tier text ("Top 10%" / "Average" / etc.) was removed in favor of the
+ * `<PopularBadge>` scarcity signal — the underlying popularity_score
+ * distribution lacks the fidelity to distinguish mid-pack tiers
+ * meaningfully. The bar graphic still carries fine-grained positioning;
+ * the value prop still carries the literal value ("$5k-10k/mo", "strong",
+ * etc.). See Knowledge/Midrank Percentile Computation.
  */
-
-import { formatPercentileLabel } from "@/lib/signal-utils"
 
 interface SignalBarProps {
   /** 0-100 percentile position */
@@ -48,11 +53,10 @@ export function SignalBar({
   compact = false,
 }: SignalBarProps) {
   const clamped = Math.max(0, Math.min(100, percentile))
-  const rankLabel = formatPercentileLabel(clamped)
 
   if (compact) {
     return (
-      <div className="flex items-center gap-1.5" title={`${label}: ${value} (${rankLabel.toLowerCase()})`}>
+      <div className="flex items-center gap-1.5" title={`${label}: ${value}`}>
         <div className="relative h-1.5 w-10 rounded-full bg-muted">
           <div
             className={`absolute left-0 top-0 h-1.5 rounded-full ${fillColors[color]}`}
@@ -85,7 +89,6 @@ export function SignalBar({
       </div>
       <div className="flex justify-between text-[10px] text-muted-foreground">
         <span>Low</span>
-        <span>{rankLabel}</span>
         <span>High</span>
       </div>
     </div>
