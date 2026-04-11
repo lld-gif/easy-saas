@@ -223,30 +223,50 @@ export async function getAggregateStats(): Promise<AggregateStats> {
   if (_cachedStats && Date.now() - _cacheTime < CACHE_TTL) return _cachedStats
 
   const supabase = await createClient()
-  // Supabase/PostgREST defaults to 1000 rows per request. Without an explicit
-  // limit, ordering by popularity_score ascending returns only the BOTTOM 1000
-  // scores — which previously made getPercentile() return 100 for every idea
-  // above that truncated max. We now compute the threshold once server-side
-  // and only ship the scalar to clients, but the full fetch is still required
-  // to find p99 correctly.
-  const { data } = await supabase
-    .from("ideas")
-    .select("popularity_score")
-    .eq("status", "active")
-    .order("popularity_score", { ascending: true })
-    .limit(100000)
+  // Compute the aggregate where the data lives. The previous version fetched
+  // every active idea's popularity_score and computed p99 in Node after the
+  // fact — but PostgREST silently clamped the response to ~1766 rows (short
+  // of the true 1969-row corpus) despite an explicit `.limit(100000)`. The
+  // p99 of that truncated sample was ~4.07, making ~200 mid-ranked ideas
+  // qualify as Popular instead of the top ~20.
+  //
+  // Root cause is architectural: a client-requested limit cannot override a
+  // server-configured max-rows ceiling. Any aggregate derived from a fetched
+  // row set is vulnerable to transport truncation. The fix is to compute the
+  // aggregate inside Postgres and ship only the scalar — zero rows across
+  // the wire, no truncation surface, one roundtrip.
+  //
+  // See supabase/migrations/011_aggregate_stats_rpc.sql and
+  // Knowledge/Midrank Percentile Computation (Fifth fix).
+  const { data, error } = await supabase.rpc("get_aggregate_stats")
 
-  const scores = (data || []).map((d) => d.popularity_score ?? 0)
-  // scores is already sorted ascending. Nearest-rank p99: index at ceil(0.99*n)-1.
-  // For n=1969 this selects index 1949 (the 20th-from-top score). Any idea
-  // whose score is >= scores[1949] is in the top 20, matching the corpus
-  // validation in Knowledge/Midrank Percentile Computation.
-  const n = scores.length
-  const p99Index = n > 0 ? Math.max(0, Math.ceil(n * 0.99) - 1) : 0
-  const popularity_threshold = n > 0 ? scores[p99Index] : 0
-  const max_score = n > 0 ? scores[n - 1] : 0
+  if (error || !data || data.length === 0) {
+    if (error) console.error("getAggregateStats RPC failed:", error)
+    // Safe defaults: zero threshold → isPopularScore() always returns false,
+    // so cold starts / failed calls never fire the badge on everything.
+    const fallback: AggregateStats = {
+      popularity_threshold: 0,
+      max_score: 0,
+      total: 0,
+    }
+    _cachedStats = fallback
+    _cacheTime = Date.now()
+    return fallback
+  }
 
-  _cachedStats = { popularity_threshold, max_score, total: n }
+  // Postgres `numeric` and `bigint` come back as strings over the wire —
+  // coerce explicitly so downstream comparisons against JS `number` scores
+  // don't silently string-compare.
+  const row = data[0] as {
+    popularity_threshold: number | string
+    max_score: number | string
+    total: number | string
+  }
+  _cachedStats = {
+    popularity_threshold: Number(row.popularity_threshold) || 0,
+    max_score: Number(row.max_score) || 0,
+    total: Number(row.total) || 0,
+  }
   _cacheTime = Date.now()
   return _cachedStats
 }

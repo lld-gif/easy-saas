@@ -34,21 +34,21 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
 
-  const [{ data: idea }, { data: allScores }] = await Promise.all([
+  const [{ data: idea }, { data: statsRows }] = await Promise.all([
     supabase
       .from("ideas")
       .select("title, category, mention_count, market_signal, difficulty, popularity_score")
       .eq("slug", slug)
       .single(),
-    // Must match getAggregateStats — default PostgREST cap is 1000, which
-    // truncates the bottom of the distribution and pins every active idea's
-    // percentile at 100. See queries.ts for the full writeup.
-    supabase
-      .from("ideas")
-      .select("popularity_score")
-      .eq("status", "active")
-      .order("popularity_score", { ascending: true })
-      .limit(100000),
+    // Call the server-side aggregate RPC instead of fetching all scores and
+    // computing the threshold in JS. The prior approach used
+    // `.select("popularity_score").limit(100000)` and hit PostgREST's
+    // server-side max-rows ceiling — the client-requested limit cannot
+    // override the server cap, so the response was silently truncated and
+    // the computed p99 was ~p90 of the true distribution. The RPC computes
+    // percentile_disc(0.99) directly in Postgres and returns one scalar.
+    // See supabase/migrations/011_aggregate_stats_rpc.sql.
+    supabase.rpc("get_aggregate_stats"),
   ])
 
   if (!idea) {
@@ -67,15 +67,10 @@ export default async function OGImage({ params }: { params: Promise<{ slug: stri
   // Scarcity badge: only p99+ ideas surface a "Popular" chip in the OG image.
   // Everyone else just gets the 3-column signals row, matching the site-wide
   // scarcity principle. See Knowledge/Midrank Percentile Computation.
-  //
-  // We compute the threshold inline here (rather than calling
-  // getAggregateStats) because opengraph-image.tsx runs in Next's edge-ish
-  // image route with its own Supabase client and no access to the shared
-  // module-level cache.
-  const sortedScores = (allScores ?? []).map((r) => r.popularity_score ?? 0)
-  const n = sortedScores.length
-  const p99Index = n > 0 ? Math.max(0, Math.ceil(n * 0.99) - 1) : 0
-  const popularityThreshold = n > 0 ? sortedScores[p99Index] : 0
+  const statsRow = (statsRows ?? [])[0] as
+    | { popularity_threshold: number | string }
+    | undefined
+  const popularityThreshold = Number(statsRow?.popularity_threshold ?? 0) || 0
   const popular = isPopularScore(idea.popularity_score ?? 0, popularityThreshold)
 
   return new ImageResponse(
