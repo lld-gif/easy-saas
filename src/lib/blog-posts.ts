@@ -844,6 +844,209 @@ Two open lanes: **privacy-first analytics** (no cookie banner required, GDPR-com
 
 **[Browse all 500+ ideas by category →](/ideas)** | **[Filter by easy difficulty →](/ideas?difficulty=easy)** | **[Unlock tech specs with Pro →](/pricing)**`,
   },
+  {
+    slug: "how-to-build-a-claude-code-harness",
+    title: "How to Build a Claude Code Harness: The Developer's Guide to AI-Powered Workflows",
+    description: "Learn how to configure Claude Code with hooks, skills, CLAUDE.md, and launch.json to build consistent, automated development workflows.",
+    publishedAt: "2026-04-15",
+    content: `Most developers using AI coding assistants start the same way: open a chat, paste some code, ask a question. It works, but it doesn't scale. Every new session starts from scratch. Context is lost. Instructions are repeated. The AI doesn't know your project conventions, your preferred patterns, or what you were working on yesterday.
+
+A Claude Code harness fixes this. It's a set of configuration files that teach Claude about your project, automate repetitive workflows, and maintain context across sessions. Think of it as the difference between a freelancer who shows up every day not knowing the codebase and a team member who has read the docs, knows the conventions, and picks up where they left off.
+
+Here's how to build one from scratch.
+
+## What is a Claude Code Harness?
+
+A harness is the collection of files that configure Claude Code's behavior for a specific project or workspace. There's no single "harness file" — it's a system of 5 building blocks that work together:
+
+| Building Block | File | Purpose |
+|---|---|---|
+| **Project instructions** | \`CLAUDE.md\` | Tell Claude about your codebase, conventions, and rules |
+| **Hooks** | \`settings.json\` | Automate actions before/after tool calls |
+| **Skills** | \`SKILL.md\` files | Reusable capabilities Claude can invoke |
+| **Dev server config** | \`launch.json\` | Start preview servers for live verification |
+| **Permissions** | \`settings.json\` | Control what Claude can do without asking |
+
+Each one is optional. You can start with just a \`CLAUDE.md\` and add the others as your workflow matures.
+
+## Building Block 1: CLAUDE.md — Your Project's Brain
+
+The \`CLAUDE.md\` file is the single most impactful piece of a harness. It's a markdown file at your project root that Claude reads at the start of every conversation. Whatever you put here, Claude knows — every session, without being told again.
+
+**What to include:**
+
+\`\`\`markdown
+# My Project — Claude Instructions
+
+## Stack
+- Next.js 16 (App Router) + Supabase + Vercel
+- Tailwind CSS + shadcn/ui
+- TypeScript strict mode
+
+## Conventions
+- All API routes return \`{ success: true, data }\` or \`{ error: string }\`
+- Use cursor-based pagination, never offset
+- Never add comments to code unless the logic is non-obvious
+- Run \`npm run build\` before committing — fix any errors
+
+## Database
+- Supabase project: \`my-project-ref\`
+- RLS is enabled on all tables — use service_role for admin operations
+- Migrations are in \`supabase/migrations/\` — never modify deployed ones
+
+## Git
+- Feature branches off \`main\`
+- Never push to \`main\` without asking
+- Commit messages: conventional commits (feat:, fix:, chore:)
+\`\`\`
+
+The key insight: **CLAUDE.md replaces repetitive instructions.** Instead of saying "use cursor pagination" every time you ask for a new endpoint, you say it once in CLAUDE.md and it applies forever.
+
+**Pro tip:** You can also create \`CLAUDE.md\` files in subdirectories. Claude reads them when working in that directory — useful for monorepos where different packages have different conventions.
+
+## Building Block 2: Hooks — Automated Guardrails
+
+Hooks are shell commands that run automatically before or after Claude performs specific actions. They're defined in \`.claude/settings.json\` and execute without Claude's involvement — the harness runs them.
+
+**Example: auto-lint on file save**
+
+\`\`\`json
+{
+  "hooks": {
+    "Edit": {
+      "after": "cd $(dirname $CLAUDE_FILE_PATH) && npx eslint --fix $CLAUDE_FILE_PATH 2>/dev/null || true"
+    }
+  }
+}
+\`\`\`
+
+Every time Claude edits a file, ESLint runs automatically. Claude doesn't need to remember to lint — the harness enforces it.
+
+**Example: verify preview after code changes**
+
+\`\`\`json
+{
+  "hooks": {
+    "Edit": {
+      "after": "echo 'Code was edited while a preview server is running. Follow the verification workflow.'"
+    }
+  }
+}
+\`\`\`
+
+This hook reminds Claude to check the browser preview after making changes — preventing the "I edited the file but didn't verify it works" failure mode.
+
+**Common hook patterns:**
+- **Pre-commit checks:** Run tests before \`git commit\`
+- **Auto-format:** Run Prettier after file edits
+- **Context capture:** Remind Claude to save session state before ending
+
+## Building Block 3: Skills — Reusable Capabilities
+
+Skills are markdown files that teach Claude specific workflows. When Claude needs to do something that matches a skill's trigger, it loads the skill and follows its instructions.
+
+A skill file (\`SKILL.md\`) looks like this:
+
+\`\`\`markdown
+# Deploy to Production
+
+## When to Activate
+- User says "deploy" or "ship to prod"
+- After merging to main
+
+## Workflow
+1. Run \`npm run build\` — abort if errors
+2. Run \`npm test\` — abort if failures
+3. Check git status — warn if uncommitted changes
+4. Push to main
+5. Verify Vercel deployment succeeded
+6. Run smoke tests against production URL
+\`\`\`
+
+Skills are powerful because they encode **institutional knowledge**. Instead of remembering the 6-step deploy process, you tell Claude once and it follows the process every time.
+
+**Skills we use on Vibe Code Ideas:**
+- **Context capture** — saves session work to a persistent knowledge base
+- **Web design inspiration** — matches project descriptions to reference websites
+- **Search-first** — checks for existing packages before writing custom code
+- **Content engine** — adapts long-form content to platform-native social posts
+
+## Building Block 4: launch.json — Dev Server Configuration
+
+The \`launch.json\` file (at \`.claude/launch.json\`) tells Claude how to start your development server for live preview verification. Without it, Claude can't check whether its code changes actually work in the browser.
+
+\`\`\`json
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "my-app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    }
+  ]
+}
+\`\`\`
+
+Once configured, Claude can start the server, make changes, reload the page, and verify the output — all without you touching the browser. This is especially valuable for overnight autonomous work sessions where nobody is watching.
+
+## Building Block 5: Permissions in settings.json
+
+The \`settings.json\` file controls what Claude can do without asking for permission. The default is to ask before running any command, but you can pre-approve safe operations:
+
+\`\`\`json
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npm test)",
+      "Bash(git status)",
+      "Bash(git diff)"
+    ]
+  }
+}
+\`\`\`
+
+This lets Claude run builds and tests freely while still asking before destructive operations like \`git push\` or file deletions.
+
+## Real-World Example: How Vibe Code Ideas Uses Its Harness
+
+Vibe Code Ideas (vibecodeideas.ai) is a SaaS that discovers product ideas from across the internet. It runs on Next.js + Supabase + Vercel, and the entire development workflow is orchestrated through a Claude Code harness.
+
+Here's what the harness does:
+
+**CLAUDE.md** defines the full project context — stack, conventions, database schema, git workflow, and links to referenced skill files. New sessions start with full context instead of "remind me what we were working on."
+
+**Hooks** enforce verification — after every code edit, Claude is reminded to check the browser preview. After every git operation, Claude is reminded not to push to main without approval.
+
+**Skills** automate complex workflows:
+- The **context-capture skill** persists session work to a structured knowledge base so nothing is lost between conversations
+- The **content-engine skill** takes new features and generates platform-specific launch content (Product Hunt, Reddit, LinkedIn, X)
+- A **scrape pipeline** runs daily via Edge Functions + pg_cron, extracting ideas from 6 platforms
+
+**launch.json** lets Claude start the Next.js dev server and verify changes in real time — checking that the newsletter renders correctly, that admin pages load, that new filters work.
+
+The result: a development workflow where Claude picks up exactly where it left off, follows project conventions automatically, and verifies its own work before committing. The harness turns an AI assistant into a team member.
+
+## Getting Started in 5 Minutes
+
+1. **Create \`CLAUDE.md\`** at your project root. Start with your stack, top 3 conventions, and any "never do this" rules.
+
+2. **Add \`.claude/settings.json\`** with pre-approved safe commands (build, test, lint).
+
+3. **Create one skill** for a workflow you repeat often. Start simple — even a 10-line deploy checklist saves time across sessions.
+
+4. **Add \`.claude/launch.json\`** if you have a dev server. Claude will use it to verify changes visually.
+
+5. **Iterate.** The best harnesses grow organically. Every time you find yourself repeating an instruction, add it to CLAUDE.md. Every time a workflow fails, add a hook to prevent it.
+
+## What to Build Next
+
+If you're looking for a project to test your harness on, we track [2,000+ SaaS ideas](/ideas) ranked by real demand signals. Filter by [developer tools](/ideas?category=devtools) or [easy difficulty](/ideas?difficulty=easy) to find something you can build in a weekend — and use your new Claude Code harness to build it faster than you thought possible.
+
+**[Browse developer tool ideas →](/ideas?category=devtools)** | **[Filter by easy builds →](/ideas?difficulty=easy)** | **[Get full tech specs with Pro →](/pricing)**`,
+  },
 ]
 
 export function getBlogPost(slug: string): BlogPost | undefined {
