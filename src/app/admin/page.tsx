@@ -8,6 +8,7 @@ import { PipelineTable } from "@/components/admin/PipelineTable"
 import { QualityCards } from "@/components/admin/QualityCards"
 import { CostTracker } from "@/components/admin/CostTracker"
 import { AdminShell } from "@/components/admin/AdminShell"
+import { ScrapeButton } from "@/components/admin/ScrapeButton"
 import Link from "next/link"
 
 export const dynamic = "force-dynamic"
@@ -59,6 +60,12 @@ export default async function AdminPage() {
 
         {/* Daily Ingest */}
         <DailyChart title="Daily Ingest Rate (last 30 days)" data={stats.daily_ingest} />
+
+        {/* Run Scrape */}
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Run Scrape</h3>
+          <ScrapeButton />
+        </div>
 
         {/* Pipeline + Trending */}
         <div className="grid gap-4 md:grid-cols-3">
