@@ -1,8 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { createScrapeHandler } from "../_shared/extract.ts"
+import { createScrapeHandler, getEnabledSources } from "../_shared/extract.ts"
+
+const DEFAULT_SUBREDDITS = ["SaaS", "Entrepreneur", "SideProject", "slavelabour", "microsaas", "indiehackers"]
 
 async function fetchReddit(): Promise<string[]> {
-  const subreddits = ["SaaS", "Entrepreneur", "SideProject", "slavelabour", "microsaas", "indiehackers"]
+  const configured = await getEnabledSources("reddit")
+  const subreddits = configured.length > 0 ? configured : DEFAULT_SUBREDDITS
+  console.log(`Reddit: using ${subreddits.length} subreddits (${configured.length > 0 ? "from DB" : "hardcoded fallback"})`)
+
   const posts: string[] = []
 
   for (const sub of subreddits) {

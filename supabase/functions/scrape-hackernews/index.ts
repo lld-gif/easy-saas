@@ -1,9 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { createScrapeHandler } from "../_shared/extract.ts"
+import { createScrapeHandler, getEnabledSources } from "../_shared/extract.ts"
+
+const DEFAULT_QUERIES = ["Show HN", "SaaS idea", "I built", "Ask HN what should", "micro saas", "side project revenue"]
 
 async function fetchHackerNews(): Promise<string[]> {
+  const configured = await getEnabledSources("hackernews")
+  const queries = configured.length > 0 ? configured : DEFAULT_QUERIES
+  console.log(`HN: using ${queries.length} queries (${configured.length > 0 ? "from DB" : "hardcoded fallback"})`)
+
   const posts: string[] = []
-  const queries = ["Show HN", "SaaS idea", "I built", "Ask HN what should", "micro saas", "side project revenue"]
 
   for (const q of queries) {
     try {

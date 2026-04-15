@@ -1,12 +1,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { createScrapeHandler } from "../_shared/extract.ts"
+import { createScrapeHandler, getEnabledSources } from "../_shared/extract.ts"
+
+const DEFAULT_SUBREDDITS = ["indiehackers", "EntrepreneurRideAlong", "IMadeThis"]
 
 async function fetchIndieHackers(): Promise<string[]> {
+  const configured = await getEnabledSources("indiehackers")
+  const subreddits = configured.length > 0 ? configured : DEFAULT_SUBREDDITS
+  console.log(`IH: using ${subreddits.length} sources (${configured.length > 0 ? "from DB" : "hardcoded fallback"})`)
+
   const posts: string[] = []
 
-  // Primary: Fetch from r/indiehackers (reliable JSON API)
-  const subreddits = ["indiehackers", "EntrepreneurRideAlong", "IMadeThis"]
-
+  // Primary: Fetch from configured subreddits
   for (const sub of subreddits) {
     try {
       const res = await fetch(
@@ -32,7 +36,7 @@ async function fetchIndieHackers(): Promise<string[]> {
     await new Promise((r) => setTimeout(r, 1000))
   }
 
-  // Secondary: Try Indie Hackers directly
+  // Secondary: Try Indie Hackers RSS directly
   try {
     const res = await fetch("https://www.indiehackers.com/feed", {
       headers: {
@@ -42,7 +46,6 @@ async function fetchIndieHackers(): Promise<string[]> {
     })
     if (res.ok) {
       const xml = await res.text()
-      // Parse RSS items
       const items = xml.matchAll(/<item>[\s\S]*?<\/item>/gi)
       for (const item of items) {
         const titleMatch = item[0].match(/<title><!\[CDATA\[(.+?)\]\]><\/title>/i) ||
