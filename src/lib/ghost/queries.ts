@@ -71,25 +71,37 @@ async function getRelatedFromGhost(
   const pool = await getGhostPool()
   if (!pool) return { ideas: [], source: "ghost" }
 
-  // Build the query text from the idea's title + summary.
-  // The hybrid_search() RPC handles embedding generation internally
-  // if the Ghost instance is configured with an embedding model,
-  // OR we pass a pre-computed embedding. For now, we pass the text
-  // and let the RPC do BM25 matching. Full hybrid (vector + BM25)
-  // requires the embedding — that path activates once the seed script
-  // has populated the embedding column and we wire up OpenAI here.
-  const queryText = `${idea.title} — ${idea.summary}`
+  // Build an OR-combined tsquery from the idea's title words so that
+  // any matching keyword contributes to the ranking. This enables
+  // cross-category discovery — "Competitor Price Monitoring for
+  // Ecommerce Sellers" finds monitoring tools in productivity,
+  // pricing tools in marketing, etc.
+  //
+  // Stop words (for, the, a, an, etc.) are stripped by Postgres's
+  // english text search config automatically.
+  //
+  // When embeddings are available, this path will combine BM25
+  // (keyword relevance) with vector similarity (semantic meaning)
+  // in a weighted hybrid score.
+  const queryText = idea.title
 
   const result = await pool.query(
-    `SELECT
-       id, title, summary, category, tags,
-       mention_count, revenue_upper_usd,
-       ts_rank(
-         to_tsvector('english', title || ' ' || summary),
-         plainto_tsquery('english', $1)
-       ) AS similarity
-     FROM ideas_search
-     WHERE id != $2
+    `WITH query AS (
+       SELECT to_tsquery('english',
+         array_to_string(
+           array(
+             SELECT lexeme FROM unnest(to_tsvector('english', $1)) AS t(lexeme, positions)
+           ), ' | '
+         )
+       ) AS q
+     )
+     SELECT
+       i.id, i.slug, i.title, i.summary, i.category,
+       i.mention_count, i.revenue_upper_usd,
+       ts_rank(i.search_vector, query.q) AS similarity
+     FROM ideas_search i, query
+     WHERE i.search_vector @@ query.q
+       AND i.id != $2
      ORDER BY similarity DESC
      LIMIT $3`,
     [queryText, idea.id, limit]
