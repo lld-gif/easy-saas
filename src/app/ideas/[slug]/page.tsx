@@ -9,6 +9,7 @@ import { PopularBadge } from "@/components/PopularBadge"
 import { SignalBar } from "@/components/SignalBar"
 import { PackageSection } from "@/components/PackageSection"
 import { ShareButtons } from "@/components/ShareButtons"
+import { RelatedIdeas } from "@/components/RelatedIdeas"
 import {
   getIdeaBySlug,
   getAggregateStats,
@@ -196,6 +197,11 @@ export default async function IdeaDetailPage({ params }: Props) {
       </div>
 
       <ShareButtons title={idea.title} summary={idea.summary} />
+
+      {/* Related Ideas — powered by Ghost hybrid search (fallback: Supabase category match) */}
+      <Suspense fallback={null}>
+        <RelatedIdeas idea={{ id: idea.id, title: idea.title, summary: idea.summary, category: idea.category }} />
+      </Suspense>
 
       <Suspense fallback={null}>
         <PackageSection ideaId={idea.id} ideaTitle={idea.title} />
