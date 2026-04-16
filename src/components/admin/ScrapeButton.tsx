@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 const PLATFORMS = [
   { value: "reddit", label: "Reddit" },
@@ -12,6 +13,7 @@ const PLATFORMS = [
 ]
 
 export function ScrapeButton() {
+  const router = useRouter()
   const [platform, setPlatform] = useState("reddit")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string | null>(null)
@@ -36,6 +38,10 @@ export function ScrapeButton() {
       } else {
         setResult("Completed (no details)")
       }
+      // Refresh the server component so the Pipeline Runs table picks up the
+      // new scrape_runs row without requiring a full page reload. Refresh on
+      // error too, because a partial run may still have logged a failure row.
+      router.refresh()
     } catch (err) {
       setResult(`Error: ${err instanceof Error ? err.message : "Unknown error"}`)
     } finally {
