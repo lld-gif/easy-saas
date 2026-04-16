@@ -31,6 +31,30 @@ export interface ScrapeRunData {
   error_message?: string
 }
 
+/**
+ * Fetch enabled source identifiers for a platform from the scrape_sources
+ * table. Returns an empty array on any error (table missing, network issue,
+ * etc.) — callers should fall back to a hardcoded default list when empty.
+ */
+export async function getEnabledSources(platform: string): Promise<string[]> {
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    )
+    const { data, error } = await supabase
+      .from("scrape_sources")
+      .select("source_identifier")
+      .eq("platform", platform)
+      .eq("enabled", true)
+
+    if (error || !data || data.length === 0) return []
+    return data.map((s: { source_identifier: string }) => s.source_identifier)
+  } catch {
+    return []
+  }
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()

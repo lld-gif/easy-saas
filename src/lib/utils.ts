@@ -29,7 +29,7 @@ import type { IdeaFilters, PopularityFilter, TimeFilter, SortOption, RevenueFilt
 
 const VALID_POPULARITY: PopularityFilter[] = ["all", "trending", "rising", "new"]
 const VALID_TIME: TimeFilter[] = ["all", "week", "month", "3months"]
-const VALID_SORT: SortOption[] = ["trending", "newest", "recent", "easiest", "revenue"]
+const VALID_SORT: SortOption[] = ["trending", "newest", "recent", "easiest", "revenue", "fresh"]
 const VALID_REVENUE: RevenueFilter[] = ["any", "2k", "10k", "25k", "50k"]
 const VALID_DIFFICULTY = ["easy", "medium", "hard"] as const
 const VALID_VIEW = ["card", "list"] as const

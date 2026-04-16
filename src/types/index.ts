@@ -34,7 +34,7 @@ export interface IdeaSource {
   extracted_at: string
 }
 
-export type SortOption = "trending" | "newest" | "recent" | "easiest" | "popularity" | "revenue"
+export type SortOption = "trending" | "newest" | "recent" | "easiest" | "popularity" | "revenue" | "fresh"
 
 export type PopularityFilter = "all" | "trending" | "rising" | "new"
 
