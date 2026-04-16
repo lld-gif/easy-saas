@@ -43,8 +43,18 @@ async function fetchHackerNews(): Promise<string[]> {
     }
   }
 
-  console.log(`HN: ${posts.length} unique posts across ${queries.length} queries × 2 endpoints`)
-  return posts
+  // Cap before extraction so we stay within the 150s Edge Function wall clock.
+  // Extraction runs serially in chunks of 10 at ~5s/chunk via Claude Haiku;
+  // 120 posts = 12 chunks ≈ 60s, matching v4's proven throughput. The wider
+  // source pool (11 queries × 2 endpoints) still improves discovery — we're
+  // picking the best 120 from a larger candidate set rather than the only 120.
+  const MAX_POSTS_PER_RUN = 120
+  const capped = posts.slice(0, MAX_POSTS_PER_RUN)
+  console.log(
+    `HN: ${posts.length} unique posts across ${queries.length} queries × 2 endpoints` +
+      (posts.length > MAX_POSTS_PER_RUN ? ` (capped to ${MAX_POSTS_PER_RUN} for wall-clock safety)` : "")
+  )
+  return capped
 }
 
 Deno.serve(
