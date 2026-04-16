@@ -19,6 +19,7 @@ const TOP_CATEGORIES = [
 
 const SORT_OPTIONS = [
   { value: "trending", label: "Trending" },
+  { value: "fresh", label: "Fresh (7 days)" },
   { value: "newest", label: "Newest" },
   { value: "revenue", label: "Highest revenue" },
   { value: "easiest", label: "Easiest first" },

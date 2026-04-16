@@ -102,6 +102,16 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
     query = query.gte("revenue_upper_usd", threshold[filters.revenue])
   }
 
+  // "Fresh" sort implies a 7-day first_seen_at window. Apply it here so the
+  // filter is present on every paginated call without needing a separate
+  // code path. Any explicit `time` filter the user sets still composes
+  // with this — the stricter window wins.
+  if (sort === "fresh") {
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    query = query.gte("first_seen_at", sevenDaysAgo.toISOString())
+  }
+
   // Sort
   switch (sort) {
     case "trending":
@@ -117,6 +127,9 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
       query = query.order("difficulty", { ascending: true }).order("id", { ascending: false })
       break
     case "popularity":
+    case "fresh":
+      // Fresh shares the popularity ordering — the difference is the
+      // first_seen_at filter applied above.
       query = query.order("popularity_score", { ascending: false }).order("id", { ascending: false })
       break
     case "revenue":
@@ -160,6 +173,10 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
           )
           break
         case "popularity":
+        case "fresh":
+          // Fresh shares the popularity keyset. The 7-day first_seen_at
+          // filter is re-applied on the paginated query automatically
+          // (see the `if (sort === "fresh")` block above).
           query = query.or(
             `popularity_score.lt.${cursorRow.popularity_score || 0},and(popularity_score.eq.${cursorRow.popularity_score || 0},id.lt.${cursorRow.id})`
           )
