@@ -51,8 +51,11 @@ export async function GET(_request: Request, ctx: Context) {
   lines.push("")
   // Answer-shaped opener — a declarative sentence that citation pipelines
   // can extract verbatim. Keep it factual and short.
+  // Avoid the "a other" / "a automation" article-agreement trap by phrasing
+  // the sentence with the category preceding the noun rather than as an
+  // adjective. Reads cleanly for every category slug.
   lines.push(
-    `${idea.title} is a ${idea.category} product idea at difficulty ${idea.difficulty ?? "?"}/5 with ${idea.market_signal} market demand and an estimated revenue potential of ${idea.revenue_potential}.`
+    `${idea.title} is a product idea in the ${idea.category} category at difficulty ${idea.difficulty ?? "?"}/5, with ${idea.market_signal} market demand and an estimated revenue potential of ${idea.revenue_potential}.`
   )
   lines.push("")
   lines.push("## Summary")
