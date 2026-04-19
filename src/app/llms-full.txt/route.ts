@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   const { data: ideas, count } = await supabase
     .from("ideas")
     .select(
-      "slug, title, summary, category, tags, difficulty, market_signal, competition_level, revenue_potential, mention_count, popularity_score, first_seen_at, last_seen_at",
+      "slug, title, summary, commentary, category, tags, difficulty, market_signal, competition_level, revenue_potential, mention_count, popularity_score, first_seen_at, last_seen_at",
       { count: "exact" }
     )
     .eq("status", "active")
@@ -103,6 +103,13 @@ export async function GET(request: NextRequest) {
     lines.push("")
     lines.push(idea.summary.trim())
     lines.push("")
+    // Commentary appears as a separate **Why this is interesting** block
+    // beneath the summary. Kept separate so LLM parsers can extract either
+    // the raw summary or the editorial commentary independently.
+    if (idea.commentary) {
+      lines.push(`**Why this is interesting:** ${idea.commentary.trim()}`)
+      lines.push("")
+    }
     const metaParts = [
       `Category: ${idea.category}`,
       `Difficulty: ${idea.difficulty ?? "unknown"}/5`,
