@@ -138,10 +138,19 @@ export default async function IdeaDetailPage({ params }: Props) {
 
   const canonical = `https://vibecodeideas.ai/ideas/${idea.slug}`
   const categoryLabelText = categoryLabel(idea.category)
-  // Answer-shaped opener — identical to the one in /ideas/{slug}.md so
-  // citation extractors see the same first declarative sentence on both
-  // surfaces. Kept free of hype so models can quote it verbatim.
-  const answerIntro = `${idea.title} is a product idea in the ${idea.category} category at difficulty ${idea.difficulty ?? "?"}/5, with ${idea.market_signal} market demand and an estimated revenue potential of ${idea.revenue_potential}.`
+
+  // NOTE: The answer-shaped intro sentence ("{title} is a product idea in
+  // the {category} category at difficulty N/5 …") that previously rendered
+  // above the summary on this page was removed on 2026-04-19 after Luca
+  // flagged it as visually cluttering the idea page. The same structured
+  // claim still ships to LLM citation pipelines via:
+  //   - /ideas/{slug}.md (human-readable markdown variant, preferred by
+  //     most LLM crawlers)
+  //   - /llms-full.txt (full-catalog markdown ingestion)
+  //   - JSON-LD Article schema (headline + description + articleBody)
+  //   - citation_* meta tags
+  // Those four surfaces collectively cover every citation pipeline we
+  // know of, so dropping the HTML render loses no material GEO value.
 
   // JSON-LD as an array of schemas in one script tag. This is valid
   // per schema.org and is the recommended pattern for pages that are
@@ -254,19 +263,6 @@ export default async function IdeaDetailPage({ params }: Props) {
           </span>
         ))}
       </div>
-
-      {/* Answer-shaped declarative sentence. Visible to humans as a
-          concise one-line framing above the summary, and positioned as
-          the first prose paragraph on the page so LLM citation
-          pipelines that extract the first-post-intro sentence get a
-          clean structured claim. Uses a muted foreground so it doesn't
-          visually compete with the summary. */}
-      <p
-        className="text-sm text-foreground/70 mb-4 leading-relaxed"
-        data-geo-intro="true"
-      >
-        {answerIntro}
-      </p>
 
       <div className="prose prose-invert max-w-none mb-6">
         <p className="text-lg leading-relaxed text-foreground/80">{idea.summary}</p>
