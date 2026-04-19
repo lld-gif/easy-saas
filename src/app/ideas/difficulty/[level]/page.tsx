@@ -60,6 +60,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${config.title} | Vibe Code Ideas`,
     description: config.description,
+    alternates: {
+      canonical: `/ideas/difficulty/${level}`,
+    },
   }
 }
 

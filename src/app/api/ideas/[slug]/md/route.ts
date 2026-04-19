@@ -58,20 +58,22 @@ export async function GET(_request: Request, ctx: Context) {
     `${idea.title} is a product idea in the ${idea.category} category at difficulty ${idea.difficulty ?? "?"}/5, with ${idea.market_signal} market demand and an estimated revenue potential of ${idea.revenue_potential}.`
   )
   lines.push("")
-  // Commentary ("Why this is interesting") goes above the summary if
-  // present, matching the HTML page layout. This is the most citeable
-  // content on the page — LLM citation pipelines tend to extract the
-  // first analytical paragraph after the intro.
+  lines.push("## Summary")
+  lines.push("")
+  lines.push(idea.summary.trim())
+  lines.push("")
+  // Commentary ("Why this is interesting") placed AFTER the summary so
+  // the HTML page and the markdown variant read in the same order: intro
+  // sentence → factual summary → editorial commentary. Citation
+  // pipelines that look for the first analytical paragraph still pick
+  // it up; the answer-shaped intro above the Summary is the real "first
+  // analytical sentence" anchor for extractors.
   if (idea.commentary) {
     lines.push("## Why this is interesting")
     lines.push("")
     lines.push(idea.commentary.trim())
     lines.push("")
   }
-  lines.push("## Summary")
-  lines.push("")
-  lines.push(idea.summary.trim())
-  lines.push("")
   lines.push("## Signals")
   lines.push("")
   lines.push(`- **Category:** ${idea.category}`)
