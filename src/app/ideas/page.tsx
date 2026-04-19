@@ -12,6 +12,12 @@ export const metadata: Metadata = {
   title: "Browse SaaS Ideas — Vibe Code Ideas",
   description:
     "Search and filter 500+ validated micro-SaaS ideas on Vibe Code Ideas. Filter by category (Fintech, DevTools, AI/ML, and more), difficulty level, and trending popularity. Each idea includes demand signals and Pro users get full tech specs and launch checklists.",
+  // Canonical points at the bare /ideas URL so search/filter/sort query
+  // parameters (?category=fintech, ?sort=fresh, ?page=2) don't fragment
+  // authority across dozens of parameter combinations.
+  alternates: {
+    canonical: "/ideas",
+  },
 }
 
 interface Props {

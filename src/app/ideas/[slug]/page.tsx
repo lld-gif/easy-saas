@@ -32,15 +32,71 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const idea = await getIdeaBySlug(slug)
   if (!idea) return { title: "Idea Not Found — Vibe Code Ideas" }
 
+  const canonicalPath = `/ideas/${idea.slug}`
+  const absoluteUrl = `https://vibecodeideas.ai${canonicalPath}`
+
   return {
     title: `${idea.title} — Vibe Code Ideas`,
     description: idea.summary,
+    alternates: {
+      canonical: canonicalPath,
+      types: {
+        // Surface the markdown variant as an alternate representation so
+        // agents that prefer markdown can discover it from the HTML page.
+        "text/markdown": `${canonicalPath}.md`,
+      },
+    },
     openGraph: {
       title: `${idea.title} — Vibe Code Ideas`,
       description: idea.summary,
       siteName: "Vibe Code Ideas",
+      url: absoluteUrl,
+      type: "article",
+      publishedTime: idea.first_seen_at,
+      modifiedTime: idea.last_seen_at,
+    },
+    // `citation_*` meta tags follow the Google Scholar / Highwire Press
+    // convention that Perplexity, Semantic Scholar, and several LLM
+    // citation pipelines read. Treating each idea page as a citable
+    // article gives us attribution in AI search UIs.
+    other: {
+      citation_title: idea.title,
+      citation_author: "Vibe Code Ideas",
+      citation_publisher: "Vibe Code Ideas",
+      citation_publication_date: idea.first_seen_at.slice(0, 10),
+      citation_online_date: idea.last_seen_at.slice(0, 10),
+      citation_public_url: absoluteUrl,
+      citation_fulltext_html_url: absoluteUrl,
+      citation_fulltext_world_readable: "true",
     },
   }
+}
+
+/**
+ * Human-readable label for each category, used in the JSON-LD
+ * BreadcrumbList and in the answer-shaped opener. Kept inline rather than
+ * imported from categories.ts because the label casing we want here
+ * ("AI/ML" not "ai-ml", "DevTools" not "devtools") differs from the slug.
+ */
+const CATEGORY_LABELS: Record<string, string> = {
+  fintech: "Fintech",
+  devtools: "DevTools",
+  automation: "Automation",
+  "ai-ml": "AI/ML",
+  ecommerce: "Ecommerce",
+  health: "Health",
+  education: "Education",
+  "creator-tools": "Creator Tools",
+  productivity: "Productivity",
+  marketing: "Marketing",
+  "hr-recruiting": "HR / Recruiting",
+  "real-estate": "Real Estate",
+  logistics: "Logistics",
+  other: "Other",
+}
+
+function categoryLabel(slug: string): string {
+  return CATEGORY_LABELS[slug] ?? slug
 }
 
 const competitionLabels: Record<string, string> = {
@@ -80,19 +136,90 @@ export default async function IdeaDetailPage({ params }: Props) {
   const mktPercentile = signalToPercentile(idea.market_signal)
   const revPercentile = revenueToPercentile(idea.revenue_potential)
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: idea.title,
-    description: idea.summary,
-    applicationCategory: idea.category,
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: idea.popularity_score.toFixed(1),
-      ratingCount: displayMentions(idea.mention_count),
-      bestRating: stats.max_score > 0 ? stats.max_score.toFixed(1) : "100",
+  const canonical = `https://vibecodeideas.ai/ideas/${idea.slug}`
+  const categoryLabelText = categoryLabel(idea.category)
+  // Answer-shaped opener — identical to the one in /ideas/{slug}.md so
+  // citation extractors see the same first declarative sentence on both
+  // surfaces. Kept free of hype so models can quote it verbatim.
+  const answerIntro = `${idea.title} is a product idea in the ${idea.category} category at difficulty ${idea.difficulty ?? "?"}/5, with ${idea.market_signal} market demand and an estimated revenue potential of ${idea.revenue_potential}.`
+
+  // JSON-LD as an array of schemas in one script tag. This is valid
+  // per schema.org and is the recommended pattern for pages that are
+  // simultaneously an Article (editorial content), a SoftwareApplication
+  // (the product idea), and a BreadcrumbList (navigation context). LLM
+  // citation pipelines pick up whichever schema fits their extraction.
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: idea.title,
+      description: idea.summary,
+      articleBody: idea.commentary ?? idea.summary,
+      datePublished: idea.first_seen_at,
+      dateModified: idea.last_seen_at,
+      url: canonical,
+      mainEntityOfPage: canonical,
+      inLanguage: "en",
+      author: {
+        "@type": "Organization",
+        name: "Vibe Code Ideas",
+        url: "https://vibecodeideas.ai",
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "Vibe Code Ideas",
+        url: "https://vibecodeideas.ai",
+      },
+      about: {
+        "@type": "Thing",
+        name: categoryLabelText,
+      },
+      keywords: idea.tags.join(", "),
     },
-  }
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: idea.title,
+      description: idea.summary,
+      applicationCategory: idea.category,
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: idea.popularity_score.toFixed(1),
+        ratingCount: displayMentions(idea.mention_count),
+        bestRating: stats.max_score > 0 ? stats.max_score.toFixed(1) : "100",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: "https://vibecodeideas.ai",
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Ideas",
+          item: "https://vibecodeideas.ai/ideas",
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: categoryLabelText,
+          item: `https://vibecodeideas.ai/ideas/category/${idea.category}`,
+        },
+        {
+          "@type": "ListItem",
+          position: 4,
+          name: idea.title,
+          item: canonical,
+        },
+      ],
+    },
+  ]
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
@@ -128,29 +255,40 @@ export default async function IdeaDetailPage({ params }: Props) {
         ))}
       </div>
 
+      {/* Answer-shaped declarative sentence. Visible to humans as a
+          concise one-line framing above the summary, and positioned as
+          the first prose paragraph on the page so LLM citation
+          pipelines that extract the first-post-intro sentence get a
+          clean structured claim. Uses a muted foreground so it doesn't
+          visually compete with the summary. */}
+      <p
+        className="text-sm text-foreground/70 mb-4 leading-relaxed"
+        data-geo-intro="true"
+      >
+        {answerIntro}
+      </p>
+
+      <div className="prose prose-invert max-w-none mb-6">
+        <p className="text-lg leading-relaxed text-foreground/80">{idea.summary}</p>
+      </div>
+
       {/* "Why this is interesting" commentary — LLM-generated analysis
           covering market timing, closest competitor, unit economics, and
-          biggest risk. Shown above the summary in a bordered callout so
-          it's the first analytical content a reader sees. Hidden entirely
+          biggest risk. Placed AFTER the summary so readers see the
+          factual pitch first and then the editorial take. Hidden entirely
           if commentary is NULL (pre-backfill or generation failed). */}
       {idea.commentary && (
-        <div className="rounded-lg border border-border bg-card/60 p-4 sm:p-5 mb-6">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="rounded-lg border border-border bg-card/60 p-4 sm:p-5 mb-8">
+          <div className="mb-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Why this is interesting
             </span>
-            <span className="text-xs text-muted-foreground">·</span>
-            <span className="text-xs text-muted-foreground">AI analysis</span>
           </div>
           <p className="text-sm sm:text-base leading-relaxed text-foreground/90">
             {idea.commentary}
           </p>
         </div>
       )}
-
-      <div className="prose prose-invert max-w-none mb-8">
-        <p className="text-lg leading-relaxed text-foreground/80">{idea.summary}</p>
-      </div>
 
       {/* Signals Section */}
       <div className="rounded-lg border border-border bg-card p-5 mb-8">
