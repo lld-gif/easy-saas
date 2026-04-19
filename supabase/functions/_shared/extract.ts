@@ -143,6 +143,85 @@ ${chunk.map((p, idx) => `--- Post ${idx + 1} ---\n${p}`).join("\n\n")}`
   return allIdeas
 }
 
+/**
+ * Commentary model — chosen via 2026-04-18 A/B test. Kept in sync with
+ * src/lib/commentary.ts on the Next.js side (Deno can't import from src/).
+ */
+export const COMMENTARY_MODEL = "claude-sonnet-4-6"
+
+export interface CommentaryInput {
+  title: string
+  summary: string
+  category: string
+  difficulty: number | null
+  market_signal: string
+  competition_level: string
+  revenue_potential: string
+  mention_count: number
+}
+
+/**
+ * Generate a "why this is interesting" commentary paragraph for a single
+ * idea. Mirror of src/lib/commentary.ts::generateCommentary but uses
+ * fetch() directly rather than the Anthropic SDK (Deno Edge runtime keeps
+ * dependency footprint small).
+ *
+ * Returns the commentary text on success. Throws on API error — caller
+ * decides whether to swallow or propagate.
+ */
+export async function generateCommentary(
+  apiKey: string,
+  idea: CommentaryInput
+): Promise<{ text: string; model: string }> {
+  const prompt = `You are writing a one-paragraph "why this is interesting" commentary for a directory page about a SaaS / product idea. The directory audience is indie hackers and developer-founders researching what to build.
+
+Write 2-4 sentences that cover:
+1. Market timing — why this is interesting *right now* (mention real trends if they exist, don't fabricate)
+2. Closest competitor or substitute — name one if a well-known one exists, otherwise say "no clear incumbent"
+3. Unit economics hint — why the revenue band makes sense (or doesn't)
+4. Biggest risk — the single most likely reason this idea fails
+
+Tone: direct, specific, no hype. Short declarative sentences. Avoid filler phrases like "could be a great opportunity" or "definitely has potential". If the idea is weak, say so. Do NOT restate the idea's summary. Do NOT use the phrase "this idea" — just discuss the thing. No headers, no bullets, no markdown. Just prose.
+
+Context:
+- Title: ${idea.title}
+- Summary: ${idea.summary}
+- Category: ${idea.category}
+- Difficulty: ${idea.difficulty}/5
+- Market signal: ${idea.market_signal}
+- Competition: ${idea.competition_level}
+- Revenue band: ${idea.revenue_potential}
+- Cross-source mentions: ${idea.mention_count}
+
+Return only the paragraph. No preamble.`
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: COMMENTARY_MODEL,
+      max_tokens: 400,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  })
+
+  if (!res.ok) {
+    throw new Error(`Commentary API error: ${res.status}`)
+  }
+
+  const data = await res.json()
+  const text = data.content?.[0]?.text?.trim() ?? ""
+  if (!text) {
+    throw new Error("Commentary generation returned empty text")
+  }
+
+  return { text, model: COMMENTARY_MODEL }
+}
+
 export async function deduplicateAndInsert(
   supabase: ReturnType<typeof createClient>,
   idea: ExtractedIdea,
@@ -179,6 +258,39 @@ export async function deduplicateAndInsert(
     const slug = `${slugify(idea.idea_title)}-${Date.now().toString(36)}`
     const status = idea.confidence >= 0.7 ? "active" : "needs_review"
 
+    // Generate "why this is interesting" commentary before insert so it
+    // ships with the idea on first render. Fire-and-forget-style: if
+    // generation fails we still insert the idea (commentary column is
+    // nullable and the backfill script will pick it up). We use Sonnet
+    // 4.6 per the 2026-04-18 A/B test (see docs/commentary-ab-test.md).
+    // Only generate for 'active' ideas — 'needs_review' ideas don't get
+    // shown to users and aren't worth the ~$0.004 per call.
+    let commentary: string | null = null
+    let commentaryGeneratedAt: string | null = null
+    let commentaryModel: string | null = null
+    if (status === "active") {
+      try {
+        const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY")
+        if (anthropicKey) {
+          const result = await generateCommentary(anthropicKey, {
+            title: idea.idea_title,
+            summary: idea.summary,
+            category: idea.category,
+            difficulty: idea.difficulty ?? null,
+            market_signal: idea.market_signal ?? "unknown",
+            competition_level: idea.competition_level ?? "unknown",
+            revenue_potential: idea.revenue_potential ?? "unknown",
+            mention_count: 1,
+          })
+          commentary = result.text
+          commentaryGeneratedAt = new Date().toISOString()
+          commentaryModel = result.model
+        }
+      } catch (e) {
+        console.warn(`Commentary generation failed (non-fatal):`, e)
+      }
+    }
+
     const { data: newIdea, error } = await supabase
       .from("ideas")
       .insert({
@@ -195,6 +307,9 @@ export async function deduplicateAndInsert(
         market_signal: idea.market_signal ?? "unknown",
         competition_level: idea.competition_level ?? "unknown",
         revenue_potential: idea.revenue_potential ?? "unknown",
+        commentary,
+        commentary_generated_at: commentaryGeneratedAt,
+        commentary_model: commentaryModel,
         // popularity_score is computed by DB trigger on insert
       })
       .select()

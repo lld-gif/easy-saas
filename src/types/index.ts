@@ -23,6 +23,17 @@ export interface Idea {
   status: "active" | "needs_review" | "archived"
   created_at: string
   updated_at: string
+  /**
+   * LLM-generated "why this is interesting" paragraph. 2-4 sentences
+   * covering market timing, closest competitor, unit economics hint, and
+   * biggest risk. Generated once per idea by Claude Sonnet 4.6 at insert
+   * time (new ideas) or via scripts/backfill-commentary.ts. NULL until
+   * backfill runs or if generation failed. Rendered above the summary on
+   * idea pages and included in /ideas/{slug}.md + /llms-full.txt.
+   */
+  commentary: string | null
+  commentary_generated_at: string | null
+  commentary_model: string | null
 }
 
 export interface IdeaSource {
