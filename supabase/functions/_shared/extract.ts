@@ -1,4 +1,41 @@
 import { createClient } from "jsr:@supabase/supabase-js@2"
+import {
+  COMMENTARY_MODEL,
+  buildCommentaryPrompt,
+  type CommentaryInput,
+} from "./commentary-prompt.ts"
+
+// Re-export so existing callers that import from extract.ts don't break.
+export { COMMENTARY_MODEL }
+export type { CommentaryInput }
+
+// Wall-clock budgets for external API calls. Kept conservative so that
+// a single slow upstream can't eat the Edge Function's 150s ceiling.
+// Commentary: Sonnet typically responds in 3-8s; 15s AbortController
+// leaves headroom for network jitter without letting a wedged call stall
+// the whole scrape. IndexNow: trivial HTTP POST, should round-trip in
+// well under a second; 3s is a hard stop for outright failures.
+const COMMENTARY_TIMEOUT_MS = 15_000
+const INDEXNOW_TIMEOUT_MS = 3_000
+
+/**
+ * fetch with an AbortController-backed timeout. Returns the Response on
+ * success, throws on timeout or network error. Callers decide whether
+ * to treat timeout as fatal or soft-fail.
+ */
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
+}
 
 export const CATEGORIES = [
   "fintech", "devtools", "automation", "ai-ml", "ecommerce", "health",
@@ -144,70 +181,39 @@ ${chunk.map((p, idx) => `--- Post ${idx + 1} ---\n${p}`).join("\n\n")}`
 }
 
 /**
- * Commentary model — chosen via 2026-04-18 A/B test. Kept in sync with
- * src/lib/commentary.ts on the Next.js side (Deno can't import from src/).
- */
-export const COMMENTARY_MODEL = "claude-sonnet-4-6"
-
-export interface CommentaryInput {
-  title: string
-  summary: string
-  category: string
-  difficulty: number | null
-  market_signal: string
-  competition_level: string
-  revenue_potential: string
-  mention_count: number
-}
-
-/**
  * Generate a "why this is interesting" commentary paragraph for a single
- * idea. Mirror of src/lib/commentary.ts::generateCommentary but uses
- * fetch() directly rather than the Anthropic SDK (Deno Edge runtime keeps
- * dependency footprint small).
+ * idea. Uses the canonical prompt template from ./commentary-prompt.ts
+ * (same file imported by the Next.js side) so there's a single source
+ * of truth for the prompt string.
  *
- * Returns the commentary text on success. Throws on API error — caller
- * decides whether to swallow or propagate.
+ * Hits Anthropic's REST API directly rather than through the SDK so the
+ * Deno Edge runtime stays dependency-light.
+ *
+ * Wrapped in a 15s AbortController so a wedged upstream call can't stall
+ * the caller's loop. Throws on timeout, non-2xx response, or empty
+ * content. Callers decide whether to swallow or propagate.
  */
 export async function generateCommentary(
   apiKey: string,
   idea: CommentaryInput
 ): Promise<{ text: string; model: string }> {
-  const prompt = `You are writing a one-paragraph "why this is interesting" commentary for a directory page about a SaaS / product idea. The directory audience is indie hackers and developer-founders researching what to build.
-
-Write 2-4 sentences that cover:
-1. Market timing — why this is interesting *right now* (mention real trends if they exist, don't fabricate)
-2. Closest competitor or substitute — name one if a well-known one exists, otherwise say "no clear incumbent"
-3. Unit economics hint — why the revenue band makes sense (or doesn't)
-4. Biggest risk — the single most likely reason this idea fails
-
-Tone: direct, specific, no hype. Short declarative sentences. Avoid filler phrases like "could be a great opportunity" or "definitely has potential". If the idea is weak, say so. Do NOT restate the idea's summary. Do NOT use the phrase "this idea" — just discuss the thing. No headers, no bullets, no markdown. Just prose.
-
-Context:
-- Title: ${idea.title}
-- Summary: ${idea.summary}
-- Category: ${idea.category}
-- Difficulty: ${idea.difficulty}/5
-- Market signal: ${idea.market_signal}
-- Competition: ${idea.competition_level}
-- Revenue band: ${idea.revenue_potential}
-- Cross-source mentions: ${idea.mention_count}
-
-Return only the paragraph. No preamble.`
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+  const res = await fetchWithTimeout(
+    "https://api.anthropic.com/v1/messages",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: COMMENTARY_MODEL,
+        max_tokens: 400,
+        messages: [{ role: "user", content: buildCommentaryPrompt(idea) }],
+      }),
     },
-    body: JSON.stringify({
-      model: COMMENTARY_MODEL,
-      max_tokens: 400,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  })
+    COMMENTARY_TIMEOUT_MS
+  )
 
   if (!res.ok) {
     throw new Error(`Commentary API error: ${res.status}`)
@@ -222,12 +228,31 @@ Return only the paragraph. No preamble.`
   return { text, model: COMMENTARY_MODEL }
 }
 
+/**
+ * Result of `deduplicateAndInsert`. A "new" result carries the fields
+ * the caller needs to generate + persist commentary asynchronously
+ * outside the serial dedup loop.
+ */
+export type DedupeResult =
+  | { type: "dupe" }
+  | { type: "error" }
+  | {
+      type: "new"
+      ideaId: string
+      slug: string
+      // Only populated when status === "active". Passed to the deferred
+      // commentary batch. Kept as a separate field so the Dedupe loop
+      // can decide whether to queue a commentary job per idea without
+      // re-querying the DB.
+      commentaryInput: CommentaryInput | null
+    }
+
 export async function deduplicateAndInsert(
   supabase: ReturnType<typeof createClient>,
   idea: ExtractedIdea,
   sourcePlatform: string,
   sourceText?: string
-): Promise<"new" | "dupe" | "error"> {
+): Promise<DedupeResult> {
   try {
     const { data: matches } = await supabase.rpc("find_similar_ideas", {
       search_title: idea.idea_title,
@@ -252,27 +277,25 @@ export async function deduplicateAndInsert(
         raw_text: sourceText?.slice(0, 2000),
       })
 
-      return "dupe"
+      return { type: "dupe" }
     }
 
     const slug = `${slugify(idea.idea_title)}-${Date.now().toString(36)}`
     const status = idea.confidence >= 0.7 ? "active" : "needs_review"
 
-    // Generate "why this is interesting" commentary before insert so it
-    // ships with the idea on first render. Fire-and-forget-style: if
-    // generation fails we still insert the idea (commentary column is
-    // nullable and the backfill script will pick it up). We use Sonnet
-    // 4.6 per the 2026-04-18 A/B test (see docs/commentary-ab-test.md).
-    // Only generate for 'active' ideas — 'needs_review' ideas don't get
-    // shown to users and aren't worth the ~$0.004 per call.
-    let commentary: string | null = null
-    let commentaryGeneratedAt: string | null = null
-    let commentaryModel: string | null = null
-    if (status === "active") {
-      try {
-        const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY")
-        if (anthropicKey) {
-          const result = await generateCommentary(anthropicKey, {
+    // Insert the idea with commentary: NULL. Commentary is generated
+    // and UPDATE'd in a parallel batch after the dedup loop completes
+    // (see createScrapeHandler below). This removes the ~5-8s/idea
+    // commentary latency from the critical path of the dedup loop so
+    // the Edge Function can handle more ideas without blowing past
+    // the 150s wall clock. The `commentary_generated_at` / `_model`
+    // columns get backfilled in the same UPDATE.
+    //
+    // Only 'active' ideas get commentary — 'needs_review' ideas are
+    // hidden from users and aren't worth the ~$0.004/call.
+    const commentaryInput: CommentaryInput | null =
+      status === "active"
+        ? {
             title: idea.idea_title,
             summary: idea.summary,
             category: idea.category,
@@ -281,15 +304,8 @@ export async function deduplicateAndInsert(
             competition_level: idea.competition_level ?? "unknown",
             revenue_potential: idea.revenue_potential ?? "unknown",
             mention_count: 1,
-          })
-          commentary = result.text
-          commentaryGeneratedAt = new Date().toISOString()
-          commentaryModel = result.model
-        }
-      } catch (e) {
-        console.warn(`Commentary generation failed (non-fatal):`, e)
-      }
-    }
+          }
+        : null
 
     const { data: newIdea, error } = await supabase
       .from("ideas")
@@ -307,17 +323,16 @@ export async function deduplicateAndInsert(
         market_signal: idea.market_signal ?? "unknown",
         competition_level: idea.competition_level ?? "unknown",
         revenue_potential: idea.revenue_potential ?? "unknown",
-        commentary,
-        commentary_generated_at: commentaryGeneratedAt,
-        commentary_model: commentaryModel,
-        // popularity_score is computed by DB trigger on insert
+        // commentary, commentary_generated_at, commentary_model all
+        // default to NULL; backfilled by the deferred commentary batch.
+        // popularity_score is computed by DB trigger on insert.
       })
       .select()
       .single()
 
     if (error) {
       console.warn(`Insert failed: ${error.message}`)
-      return "error"
+      return { type: "error" }
     }
 
     await supabase.from("idea_sources").insert({
@@ -326,10 +341,116 @@ export async function deduplicateAndInsert(
       raw_text: sourceText?.slice(0, 2000),
     })
 
-    return "new"
+    // IndexNow ping notifies Bing (and by extension Microsoft Copilot),
+    // Yandex, Seznam, Naver that this URL exists so they can index it
+    // within minutes instead of hours. 3s AbortController timeout inside
+    // pingIndexNow ensures a hung upstream can't delay the scrape.
+    // Only ping for active (user-visible) ideas.
+    if (status === "active") {
+      try {
+        await pingIndexNow(`https://vibecodeideas.ai/ideas/${slug}`)
+      } catch (e) {
+        console.warn(`IndexNow ping failed (non-fatal):`, e)
+      }
+    }
+
+    return {
+      type: "new",
+      ideaId: newIdea.id as string,
+      slug,
+      commentaryInput,
+    }
   } catch (e) {
     console.warn(`Dedup error:`, e)
-    return "error"
+    return { type: "error" }
+  }
+}
+
+/**
+ * Post-insert commentary backfill for a single scrape batch.
+ *
+ * Takes the list of newly-inserted ideas and generates commentary for
+ * each in parallel chunks of 5 (Anthropic's free-tier RPM is low enough
+ * that we can't just Promise.all everything). Writes the result back
+ * with a single UPDATE per idea.
+ *
+ * Rationale: the previous serial-in-loop design meant 10 new ideas =
+ * ~50-80s of commentary latency added to the scrape run, and the HN
+ * scraper was already bounded at 120 posts specifically to fit inside
+ * the 150s Edge Function wall clock. Batching pulls that cost below
+ * the parallelism ceiling so discovery volume can grow without the
+ * 504 coming back.
+ *
+ * Fire-and-forget-ish: every per-idea error is swallowed with a warn
+ * log. The row stays with `commentary: NULL` and the Next-side
+ * backfill script (`scripts/backfill-commentary.ts`) will pick it up
+ * on the next run.
+ */
+export async function fillCommentariesInParallel(
+  supabase: ReturnType<typeof createClient>,
+  anthropicKey: string,
+  jobs: Array<{ ideaId: string; commentaryInput: CommentaryInput }>,
+  concurrency = 5
+): Promise<{ succeeded: number; failed: number }> {
+  let succeeded = 0
+  let failed = 0
+
+  for (let i = 0; i < jobs.length; i += concurrency) {
+    const chunk = jobs.slice(i, i + concurrency)
+    const results = await Promise.allSettled(
+      chunk.map(async (job) => {
+        const result = await generateCommentary(anthropicKey, job.commentaryInput)
+        const { error } = await supabase
+          .from("ideas")
+          .update({
+            commentary: result.text,
+            commentary_generated_at: new Date().toISOString(),
+            commentary_model: result.model,
+          })
+          .eq("id", job.ideaId)
+        if (error) {
+          throw new Error(`UPDATE failed: ${error.message}`)
+        }
+      })
+    )
+    for (const r of results) {
+      if (r.status === "fulfilled") {
+        succeeded++
+      } else {
+        failed++
+        console.warn(`Commentary fill failed:`, r.reason)
+      }
+    }
+  }
+
+  return { succeeded, failed }
+}
+
+/**
+ * IndexNow client for Deno Edge. Mirror of src/lib/indexnow.ts
+ * (Next can't be imported from edge runtime). Bounded by a 3s timeout
+ * so a hanging IndexNow endpoint can never slow down idea ingestion.
+ */
+async function pingIndexNow(url: string): Promise<void> {
+  const key = "5436c73b9397607f618476f0877477ca"
+  const host = "vibecodeideas.ai"
+  const res = await fetchWithTimeout(
+    "https://api.indexnow.org/IndexNow",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({
+        host,
+        key,
+        keyLocation: `https://${host}/${key}.txt`,
+        urlList: [url],
+      }),
+    },
+    INDEXNOW_TIMEOUT_MS
+  )
+  if (res.status !== 200 && res.status !== 202) {
+    const text = await res.text().catch(() => "")
+    console.warn(`IndexNow returned ${res.status}: ${text.slice(0, 200)}`)
   }
 }
 
@@ -405,14 +526,56 @@ export function createScrapeHandler(
       const ideas = await extractIdeas(posts, anthropicKey, sourceContext)
       console.log(`Extracted ${ideas.length} ideas`)
 
+      // Phase 1 (serial): dedup + insert. Must run serially so that
+      // near-duplicates within the same extracted batch dedupe against
+      // each other (each iteration's insert becomes state the next
+      // iteration checks against via find_similar_ideas).
       let newCount = 0,
         dupeCount = 0,
         errorCount = 0
+      const commentaryJobs: Array<{
+        ideaId: string
+        commentaryInput: CommentaryInput
+      }> = []
       for (const idea of ideas) {
         const result = await deduplicateAndInsert(supabase, idea, sourcePlatform)
-        if (result === "new") newCount++
-        else if (result === "dupe") dupeCount++
-        else errorCount++
+        if (result.type === "new") {
+          newCount++
+          if (result.commentaryInput) {
+            commentaryJobs.push({
+              ideaId: result.ideaId,
+              commentaryInput: result.commentaryInput,
+            })
+          }
+        } else if (result.type === "dupe") {
+          dupeCount++
+        } else {
+          errorCount++
+        }
+      }
+
+      // Phase 2 (parallel, concurrency 5): backfill commentary on the
+      // newly-inserted active ideas. Each chunk of 5 runs concurrently;
+      // chunks run serially so we stay well under Anthropic's rate
+      // ceiling while still pulling what used to be serial ~6s/idea
+      // latency into a parallel-throughput regime.
+      let commentarySucceeded = 0
+      let commentaryFailed = 0
+      if (commentaryJobs.length > 0) {
+        console.log(
+          `Filling commentary for ${commentaryJobs.length} new ideas (concurrency=5)...`
+        )
+        const result = await fillCommentariesInParallel(
+          supabase,
+          anthropicKey,
+          commentaryJobs,
+          5
+        )
+        commentarySucceeded = result.succeeded
+        commentaryFailed = result.failed
+        console.log(
+          `Commentary: ${commentarySucceeded} succeeded, ${commentaryFailed} failed`
+        )
       }
 
       const duration = Date.now() - startTime

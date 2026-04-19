@@ -38,7 +38,7 @@ export async function GET() {
   lines.push("# Vibe Code Ideas")
   lines.push("")
   lines.push(
-    "> A curated directory of buildable SaaS and product ideas for indie hackers and developer-entrepreneurs. Ideas are aggregated from seven public sources (Hacker News, GitHub, Product Hunt, Indie Hackers, Reddit, Google Trends, and a growing set of founder discussion forums), deduplicated with PostgreSQL trigram similarity, and ranked by cross-platform mention frequency. Each idea page includes signals for market demand, competition, difficulty (1-5), and estimated monthly revenue potential."
+    "> A curated directory of buildable SaaS and product ideas for indie hackers and developer-entrepreneurs. Ideas are aggregated from six public sources (Hacker News, GitHub, Product Hunt, Indie Hackers, Reddit, and Google Trends), deduplicated with PostgreSQL trigram similarity, and ranked by cross-platform mention frequency. Each idea page includes signals for market demand, competition, difficulty (1-5), and estimated monthly revenue potential. Reddit ingestion is currently paused pending Reddit's formal API access review following their November 2025 policy update."
   )
   lines.push("")
   lines.push("Site: https://vibecodeideas.ai")
@@ -108,7 +108,16 @@ export async function GET() {
   )
   lines.push("")
 
-  lines.push("## Methodology")
+  lines.push("## About + methodology")
+  lines.push("")
+  lines.push(
+    "- [About Vibe Code Ideas](https://vibecodeideas.ai/about) — mission, data sources, who it's for, who built it."
+  )
+  lines.push(
+    "- [Methodology](https://vibecodeideas.ai/methodology) — full pipeline: scrape schedule per source, extraction prompt fields, deduplication via pg_trgm, popularity scoring formula, commentary generation, known limitations."
+  )
+  lines.push("")
+  lines.push("## Methodology (short version)")
   lines.push("")
   lines.push(
     "- Data collection: scheduled cron scrapes of public posts across seven platforms. Each scrape batches raw posts and passes them through Claude Haiku to extract structured idea candidates (title, summary, category, difficulty, market_signal, competition_level, revenue_potential)."
@@ -118,6 +127,9 @@ export async function GET() {
   )
   lines.push(
     "- Ranking: popularity_score is a database-computed signal combining mention_count (log-scaled), source diversity (count distinct platforms), and recency (last_seen_at decay)."
+  )
+  lines.push(
+    "- Commentary: every new active idea additionally gets a 2-4 sentence editorial paragraph from Claude Sonnet 4.6 covering market timing, closest competitor, unit economics, and biggest risk."
   )
   lines.push("")
 
