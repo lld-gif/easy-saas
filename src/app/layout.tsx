@@ -19,15 +19,32 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 })
 
+// metadataBase lets Next resolve relative canonical/OG/Twitter URLs into
+// absolute ones automatically, avoiding a class of GEO bugs where crawlers
+// receive a relative canonical and point it at the wrong host.
+const SITE_URL = "https://vibecodeideas.ai"
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Vibe Code Ideas — Discover Your Next SaaS Idea",
   description:
     "Vibe Code Ideas is a free directory of curated micro-SaaS and SaaS ideas ranked by real demand signals. Browse by category, difficulty, and trending popularity to find your next project to build.",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Vibe Code Ideas — Discover Your Next SaaS Idea",
     description:
       "Vibe Code Ideas is a free directory of curated micro-SaaS and SaaS ideas ranked by real demand signals. Browse by category, difficulty, and trending popularity to find your next project to build.",
     siteName: "Vibe Code Ideas",
+    url: SITE_URL,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vibe Code Ideas — Discover Your Next SaaS Idea",
+    description:
+      "A free directory of curated SaaS ideas ranked by real demand signals.",
   },
 }
 

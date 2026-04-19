@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   title: "Trending SaaS Ideas This Week | Vibe Code Ideas",
   description:
     "The hottest SaaS ideas right now — ranked by popularity score and community buzz. Updated weekly.",
+  alternates: {
+    canonical: "/ideas/trending",
+  },
 }
 
 export default async function TrendingPage() {

@@ -55,6 +55,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description:
       categoryDescriptions[slug] ??
       `Browse the best ${category.label} SaaS ideas — validated by community mentions and ranked by popularity.`,
+    alternates: {
+      canonical: `/ideas/category/${slug}`,
+    },
   }
 }
 
