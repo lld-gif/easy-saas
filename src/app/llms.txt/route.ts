@@ -38,7 +38,7 @@ export async function GET() {
   lines.push("# Vibe Code Ideas")
   lines.push("")
   lines.push(
-    "> A curated directory of buildable SaaS and product ideas for indie hackers and developer-entrepreneurs. Ideas are aggregated from seven public sources (Hacker News, GitHub, Product Hunt, Indie Hackers, Reddit, Google Trends, and a growing set of founder discussion forums), deduplicated with PostgreSQL trigram similarity, and ranked by cross-platform mention frequency. Each idea page includes signals for market demand, competition, difficulty (1-5), and estimated monthly revenue potential."
+    "> A curated directory of buildable SaaS and product ideas for indie hackers and developer-entrepreneurs. Ideas are aggregated from six public sources (Hacker News, GitHub, Product Hunt, Indie Hackers, Reddit, and Google Trends), deduplicated with PostgreSQL trigram similarity, and ranked by cross-platform mention frequency. Each idea page includes signals for market demand, competition, difficulty (1-5), and estimated monthly revenue potential. Reddit ingestion is currently paused pending Reddit's formal API access review following their November 2025 policy update."
   )
   lines.push("")
   lines.push("Site: https://vibecodeideas.ai")

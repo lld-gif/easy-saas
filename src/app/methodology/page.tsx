@@ -182,15 +182,23 @@ export default function MethodologyPage() {
         </h2>
         <p>
           Every extracted idea is compared against the existing corpus using{" "}
-          <strong>PostgreSQL pg_trgm trigram similarity</strong> on
-          concatenated title + summary. The threshold is{" "}
-          <strong>0.6</strong>. A match increments the existing idea's{" "}
+          <strong>PostgreSQL pg_trgm trigram similarity</strong> on title and
+          summary separately. An existing idea is considered a duplicate if
+          either <code className="text-sm">similarity(title, new_title) &gt; 0.6</code>{" "}
+          OR{" "}
+          <code className="text-sm">similarity(summary, new_summary) &gt; 0.5</code>.
+          The asymmetric threshold reflects the observation that titles are
+          shorter and noisier (so demand a higher bar) while summaries carry
+          more signal. A match increments the existing idea's{" "}
           <code className="text-sm">mention_count</code> and updates{" "}
           <code className="text-sm">last_seen_at</code>; no match creates a
           new row. We chose pg_trgm (pure Postgres, no embedding calls) over
           semantic similarity for Phase 1 to keep ingestion cost near-zero
           and avoid a hard dependency on a second LLM provider. Semantic
-          dedup via Ghost pgvectorscale is queued for a later phase.
+          dedup via Ghost pgvectorscale is queued for a later phase. The
+          canonical SQL lives in{" "}
+          <code className="text-sm">supabase/migrations/001_initial_schema.sql</code>{" "}
+          as <code className="text-sm">find_similar_ideas()</code>.
         </p>
 
         <h2 className="text-2xl font-semibold mt-10 mb-3">
