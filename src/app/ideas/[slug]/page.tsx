@@ -128,6 +128,26 @@ export default async function IdeaDetailPage({ params }: Props) {
         ))}
       </div>
 
+      {/* "Why this is interesting" commentary — LLM-generated analysis
+          covering market timing, closest competitor, unit economics, and
+          biggest risk. Shown above the summary in a bordered callout so
+          it's the first analytical content a reader sees. Hidden entirely
+          if commentary is NULL (pre-backfill or generation failed). */}
+      {idea.commentary && (
+        <div className="rounded-lg border border-border bg-card/60 p-4 sm:p-5 mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Why this is interesting
+            </span>
+            <span className="text-xs text-muted-foreground">·</span>
+            <span className="text-xs text-muted-foreground">AI analysis</span>
+          </div>
+          <p className="text-sm sm:text-base leading-relaxed text-foreground/90">
+            {idea.commentary}
+          </p>
+        </div>
+      )}
+
       <div className="prose prose-invert max-w-none mb-8">
         <p className="text-lg leading-relaxed text-foreground/80">{idea.summary}</p>
       </div>
