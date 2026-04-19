@@ -22,14 +22,14 @@ export const revalidate = 3600
 export const metadata: Metadata = {
   title: "About Vibe Code Ideas — How the Directory Works",
   description:
-    "Vibe Code Ideas is a free directory of buildable SaaS and product ideas for indie hackers and developer-founders. Ideas are aggregated from seven public sources, deduplicated with PostgreSQL trigram similarity, and ranked by cross-platform mention frequency.",
+    "Vibe Code Ideas is a free directory of buildable SaaS and product ideas for indie hackers and developer-founders. Ideas are aggregated from six public sources, deduplicated with PostgreSQL trigram similarity, and ranked by cross-platform mention frequency.",
   alternates: {
     canonical: "/about",
   },
   openGraph: {
     title: "About Vibe Code Ideas",
     description:
-      "A free directory of buildable SaaS ideas aggregated from seven public sources, deduplicated, and ranked by real demand signals.",
+      "A free directory of buildable SaaS ideas aggregated from six public sources, deduplicated, and ranked by real demand signals.",
     type: "article",
   },
 }
@@ -49,7 +49,7 @@ const jsonLd = {
   url: "https://vibecodeideas.ai/about",
   name: "About Vibe Code Ideas",
   description:
-    "Vibe Code Ideas is a free directory of buildable SaaS and product ideas, aggregated from seven public sources and ranked by cross-platform mention frequency.",
+    "Vibe Code Ideas is a free directory of buildable SaaS and product ideas, aggregated from six public sources and ranked by cross-platform mention frequency.",
   mainEntity: {
     "@type": "Organization",
     name: "Vibe Code Ideas",
@@ -110,7 +110,7 @@ export default async function AboutPage() {
 
         <h2 className="text-2xl font-semibold mt-10 mb-3">Data sources</h2>
         <p>
-          Ideas are aggregated from seven public sources, in rough order of
+          Ideas are aggregated from six public sources, in rough order of
           volume contribution:
         </p>
         <ul className="list-disc list-inside space-y-1">
@@ -137,10 +137,6 @@ export default async function AboutPage() {
           <li>
             <strong>Google Trends</strong> — breakout queries signaling new
             interest
-          </li>
-          <li>
-            <strong>Founder discussion forums</strong> — a growing set of
-            smaller community sites
           </li>
         </ul>
 

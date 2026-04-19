@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     "- **revenue_potential** — free-text MRR range (e.g. `$2k-10k/mo`) or `unknown`"
   )
   lines.push(
-    "- **mention_count** — number of times this idea has been independently surfaced across the seven sources; primary input to popularity_score"
+    "- **mention_count** — number of times this idea has been independently surfaced across the six sources; primary input to popularity_score"
   )
   lines.push(
     "- **popularity_score** — database-computed ranking signal combining mention_count (log-scaled), source diversity, and recency decay"

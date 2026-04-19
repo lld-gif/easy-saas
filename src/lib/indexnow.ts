@@ -66,6 +66,11 @@ export async function pingIndexNow(
     }
   }
 
+  // 3s timeout — IndexNow is a trivial POST; if it hangs we want to fail
+  // fast rather than block whatever caller is awaiting the ping.
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 3_000)
+
   try {
     const res = await fetch(INDEXNOW_ENDPOINT, {
       method: "POST",
@@ -78,6 +83,7 @@ export async function pingIndexNow(
         keyLocation: INDEXNOW_KEY_LOCATION,
         urlList,
       }),
+      signal: controller.signal,
     })
 
     // IndexNow returns 200 (accepted) or 202 (pending) on success.
@@ -99,5 +105,7 @@ export async function pingIndexNow(
       status: 0,
       error: e instanceof Error ? e.message : String(e),
     }
+  } finally {
+    clearTimeout(timer)
   }
 }

@@ -14,6 +14,7 @@ import {
   getIdeaBySlug,
   getAggregateStats,
 } from "@/lib/queries"
+import { getCategoryBySlug } from "@/lib/categories"
 import {
   signalToPercentile,
   signalToColor,
@@ -73,30 +74,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Human-readable label for each category, used in the JSON-LD
- * BreadcrumbList and in the answer-shaped opener. Kept inline rather than
- * imported from categories.ts because the label casing we want here
- * ("AI/ML" not "ai-ml", "DevTools" not "devtools") differs from the slug.
+ * Human-readable label for a category slug. Delegates to the canonical
+ * source of truth in `src/lib/categories.ts` so JSON-LD BreadcrumbList
+ * text can't drift from what the UI renders everywhere else on the site.
  */
-const CATEGORY_LABELS: Record<string, string> = {
-  fintech: "Fintech",
-  devtools: "DevTools",
-  automation: "Automation",
-  "ai-ml": "AI/ML",
-  ecommerce: "Ecommerce",
-  health: "Health",
-  education: "Education",
-  "creator-tools": "Creator Tools",
-  productivity: "Productivity",
-  marketing: "Marketing",
-  "hr-recruiting": "HR / Recruiting",
-  "real-estate": "Real Estate",
-  logistics: "Logistics",
-  other: "Other",
-}
-
 function categoryLabel(slug: string): string {
-  return CATEGORY_LABELS[slug] ?? slug
+  return getCategoryBySlug(slug).label
 }
 
 const competitionLabels: Record<string, string> = {
@@ -163,7 +146,10 @@ export default async function IdeaDetailPage({ params }: Props) {
       "@type": "Article",
       headline: idea.title,
       description: idea.summary,
-      articleBody: idea.commentary ?? idea.summary,
+      // `||` (not `??`) so an empty-string commentary — which Sonnet
+      // can occasionally return on content-policy refusals — also falls
+      // through to the summary instead of emitting "" as articleBody.
+      articleBody: idea.commentary || idea.summary,
       datePublished: idea.first_seen_at,
       dateModified: idea.last_seen_at,
       url: canonical,
@@ -186,17 +172,19 @@ export default async function IdeaDetailPage({ params }: Props) {
       keywords: idea.tags.join(", "),
     },
     {
+      // SoftwareApplication here represents the product *idea* (not a
+      // shipped app). We deliberately do NOT emit aggregateRating —
+      // that schema type is for human user reviews, and attaching our
+      // computed popularity score to it is structured-data abuse that
+      // Google has flagged in its structured-data guidelines. The
+      // mention_count signal lives in the /methodology page content
+      // and in the citation meta tags instead, which is the honest
+      // representation.
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       name: idea.title,
       description: idea.summary,
       applicationCategory: idea.category,
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: idea.popularity_score.toFixed(1),
-        ratingCount: displayMentions(idea.mention_count),
-        bestRating: stats.max_score > 0 ? stats.max_score.toFixed(1) : "100",
-      },
     },
     {
       "@context": "https://schema.org",
