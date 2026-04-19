@@ -10,7 +10,19 @@ export function Footer() {
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} Vibe Code Ideas
           </p>
-          <nav className="flex items-center gap-4 text-xs text-muted-foreground">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+            <Link
+              href="/about"
+              className="hover:text-foreground transition-colors"
+            >
+              About
+            </Link>
+            <Link
+              href="/methodology"
+              className="hover:text-foreground transition-colors"
+            >
+              Methodology
+            </Link>
             <Link
               href="/blog"
               className="hover:text-foreground transition-colors"

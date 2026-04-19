@@ -326,10 +326,47 @@ export async function deduplicateAndInsert(
       raw_text: sourceText?.slice(0, 2000),
     })
 
+    // IndexNow ping — fire-and-forget notifies Bing (and by extension
+    // Microsoft Copilot), Yandex, Seznam, Naver that this URL exists
+    // so they can index it within minutes instead of hours. Deno Edge
+    // can't import from src/lib, so the key + endpoint are hardcoded
+    // here; keep in sync with src/lib/indexnow.ts on the Next side.
+    // Only ping for active (user-visible) ideas.
+    if (status === "active" && slug) {
+      try {
+        await pingIndexNow(`https://vibecodeideas.ai/ideas/${slug}`)
+      } catch (e) {
+        console.warn(`IndexNow ping failed (non-fatal):`, e)
+      }
+    }
+
     return "new"
   } catch (e) {
     console.warn(`Dedup error:`, e)
     return "error"
+  }
+}
+
+/**
+ * IndexNow client for Deno Edge. Mirror of src/lib/indexnow.ts
+ * (Next can't be imported from edge runtime).
+ */
+async function pingIndexNow(url: string): Promise<void> {
+  const key = "5436c73b9397607f618476f0877477ca"
+  const host = "vibecodeideas.ai"
+  const res = await fetch("https://api.indexnow.org/IndexNow", {
+    method: "POST",
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify({
+      host,
+      key,
+      keyLocation: `https://${host}/${key}.txt`,
+      urlList: [url],
+    }),
+  })
+  if (res.status !== 200 && res.status !== 202) {
+    const text = await res.text().catch(() => "")
+    console.warn(`IndexNow returned ${res.status}: ${text.slice(0, 200)}`)
   }
 }
 
