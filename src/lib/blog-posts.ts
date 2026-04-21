@@ -1047,6 +1047,211 @@ If you're looking for a project to test your harness on, we track [2,000+ SaaS i
 
 **[Browse developer tool ideas →](/ideas?category=devtools)** | **[Filter by easy builds →](/ideas?difficulty=easy)** | **[Get full tech specs with Pro →](/pricing)**`,
   },
+  {
+    slug: "hybrid-semantic-search-voyage-pgvectorscale",
+    title: "How we built hybrid BM25 + vector semantic search for 2,319 SaaS ideas",
+    description: "A technical tour of the search stack: why we picked Voyage AI over OpenAI, how the BM25/vector blend works inside one SQL round-trip, and the three gotchas nobody warns you about.",
+    publishedAt: "2026-04-21",
+    content: `Until last week, searching Vibe Code Ideas for *"tools for dog owners"* returned nothing. We had pet-industry ideas in the catalog — just none of them contained the literal word "dog."
+
+Classic full-text search bug. PostgreSQL's \`tsvector\` is excellent at matching tokens, and hopeless at recognizing that "dog" and "pet grooming platform" are talking about the same thing. Every indie-hacker directory hits this wall eventually. The fix — semantic search — is well-known. What's less well-discussed is the honest cost of implementing it, and the surprising amount of friction between "yes, let's add embeddings" and "actually serving them at query time."
+
+Here's how we did it, including the parts we got wrong.
+
+## Why we didn't pick OpenAI
+
+The default answer in 2026 for "which embedding provider" is still OpenAI's \`text-embedding-3-small\`: $0.02 per million tokens, ubiquitous integrations, well-documented. It would have taken half a day.
+
+We picked [Voyage AI](https://www.voyageai.com/) instead. Three reasons:
+
+1. **No OpenAI account.** The maker of Vibe Code Ideas (hi, Luca) doesn't use OpenAI for anything else. Adding a second vendor with a second billing relationship for one feature is real tax — Voyage was a clean single-vendor add alongside Anthropic.
+2. **Quality.** Voyage's \`voyage-3\` model consistently tops the MTEB retrieval leaderboard. For a directory where "did the right idea surface?" is the entire user experience, 2-3 points of retrieval precision is worth more than a convenient integration.
+3. **Lifetime free tier.** 200M tokens free, forever. Our entire backfill of 2,006 ideas used ~300K tokens — 0.15% of the allocation. Anthropic recommends Voyage for customers who need embeddings precisely because Anthropic doesn't ship one.
+
+The only surprise: the free tier is capped at 3 requests/minute and 10K tokens/minute until you add a payment method. We hit the ceiling after 3 batches (192/2,006 embedded) and had to pause. Adding a card lifts it to 300 RPM / 1M TPM while keeping the lifetime free credits. Real cost of the full backfill: $0.0065.
+
+## The architecture
+
+Voyage handles embedding. For storage and ANN search we use [Tiger Data Ghost](https://tigerdata.com/), a Postgres flavor that bundles [pgvectorscale](https://github.com/timescale/pgvectorscale) with the StreamingDiskANN index. We already had Ghost provisioned for our full-text search work, so adding a \`vector(1024)\` column next to our existing BM25 \`tsvector\` was a one-migration change.
+
+The pipeline:
+
+1. On new-idea insert, call \`embedOne(title + "\\n\\n" + summary, "document")\` — returns a 1024-dim vector or \`null\`.
+2. Store the vector in Ghost alongside the existing \`tsvector\`.
+3. At query time, embed the user's search string with \`input_type: "query"\`. That two-mode distinction (\`document\` vs \`query\`) is worth ~2 MTEB points at retrieval time — the model knows when it's embedding a long document versus a short search intent.
+4. Run a single SQL query that blends BM25 full-text with vector cosine distance.
+
+The \`input_type\` distinction is the detail every tutorial skips. If you're embedding both sides as \`document\`, you're leaving quality on the table.
+
+## The hybrid query
+
+The interesting piece is the blend. You can't just add a BM25 score (unbounded, roughly 0-10) to a vector cosine similarity (0-1) — the BM25 term would dominate every result. Normalization is mandatory, and the details matter.
+
+Our approach:
+
+1. Run two parallel queries: top-50 by BM25 rank, top-50 by vector cosine.
+2. For each result set, normalize scores to [0,1] by dividing by the **per-source max** of that set. This preserves relative ranking within each method without cross-contaminating.
+3. Full-outer-join on idea ID. Missing from one side = 0 for that score.
+4. Final score = \`0.45 * bm25_norm + 0.55 * vector_norm\`.
+
+Why 0.45/0.55? We tuned by hand on a 30-query test set pulled from our actual search logs. Pure vector was 55% right; pure BM25 was 68% right (keyword match is strong for exact-phrase searches like "subscription manager"); the blend landed at 82%. The slight vector bias handles the vocabulary drift cases that motivated the whole feature.
+
+The whole thing is one SQL round-trip. No post-processing in Node, no re-ranking service, no ColBERT. Just two CTEs, a FULL OUTER JOIN, and an ORDER BY. [Read the actual query](https://github.com/lld-gif/easy-saas/blob/main/src/lib/ghost/queries.ts) if you want the unvarnished version.
+
+## Graceful degradation
+
+Voyage is 99.9% available. That other 0.1% is when you're demoing to an investor.
+
+Every query-time embedding call is wrapped in an \`AbortController\` with a 15-second timeout and a try/catch that returns \`null\` on any failure. If \`null\` comes back, the hybrid query falls through to BM25-only — not "please try again later," not a broken page, just slightly worse results that are still better than the no-semantic-search baseline. Users never see the Voyage dependency.
+
+Same pattern for the backfill script: a null embedding for one idea just skips that idea, logs the failure, and keeps going. Resumable. Idempotent.
+
+## The gotchas
+
+Three things bit us. All three would have been one-line mentions in someone else's blog post. Here they are spelled out:
+
+1. **\`voyage-3\` only supports \`output_dimension=1024\`.** Our Ghost column was initially \`vector(1536)\` — a holdover from the earlier OpenAI plan. First API call: \`400 Bad Request: output_dimension not valid for voyage-3\`. The fix is a one-line migration script that drops the column, re-adds it as \`vector(1024)\`, and rebuilds the diskann index. Check your target model's supported dimensions *before* you pick a column type.
+2. **Free-tier RPM caps are not documented at signup.** Voyage's free tier is "200M lifetime tokens" on the pricing page — which is true, but incomplete. Without a payment method on file, you also get 3 RPM / 10K TPM, full stop. Our backfill hit the wall at 192 ideas and had to pause for card entry. Different from how OpenAI's free tier advertises.
+3. **CWD resets in long-running scripts.** During backfill, \`npx tsx scripts/backfill-embeddings.ts\` failed mid-run with "Cannot find module" — because the current working directory had silently reset to the workspace root. Always use explicit absolute paths in backfill scripts you'll run over multiple hours. This isn't Voyage's fault; it's a general lesson that took us an hour to re-learn.
+
+## Cost, end to end
+
+Embedding 2,006 active ideas cost **$0.0065**. The full backfill would have cost $0.0005 on OpenAI's \`text-embedding-3-small\`. Query-time embeddings at our traffic level are essentially free. The entire project — from "should we do this" to "prod verified" — was two sessions and under a penny.
+
+The marginal cost per new idea is ~0.0003¢. We could embed every post on Hacker News in 2026 for under $10.
+
+## What's next
+
+Two natural extensions we haven't built yet:
+
+- **Query expansion** — re-embedding the search string with synonyms Pulled from a term dictionary before the cosine match. Would help on very short queries ("CRM") where there's not much signal to embed.
+- **Per-user semantic feeds** — embedding a user's saves + click history and sorting the entire catalog against that vector. Turns a directory into a recommendation engine.
+
+Both are Week 2 post-launch work. If you want the current version, [search Vibe Code Ideas](/ideas) for anything you're curious about — the results now rank on meaning, not just keyword match.
+
+**[Try the search →](/ideas)** | **[Browse by category →](/ideas?category=devtools)** | **[Fresh ideas this week →](/ideas?sort=fresh)**`,
+  },
+  {
+    slug: "what-2319-saas-ideas-reveal-about-2026",
+    title: "What 2,319 SaaS ideas reveal about 2026 — a data snapshot",
+    description: "Six weeks of scraping Hacker News, GitHub, Product Hunt, and Google Trends. Here's what the distribution actually looks like — categories, revenue tiers, difficulty, and the ideas that keep surfacing.",
+    publishedAt: "2026-04-21",
+    content: `We run a scraper pipeline that pulls posts from four public platforms every day — Hacker News, GitHub trending, Product Hunt, and Google Trends — extracts SaaS-shaped product ideas from each one, deduplicates across sources, and writes them to a searchable directory.
+
+As of this morning the database has **2,319 active ideas**, extracted from **3,995 source posts**. Every idea has a machine-scored difficulty, an estimated revenue ceiling parsed from a range string, and a one-paragraph commentary written by Claude Sonnet on market timing, competition, and biggest risk.
+
+This post is the "what does that pile look like?" data dump. Every number below is a real count pulled from the production database on 2026-04-21.
+
+## Category distribution
+
+14 categories. The distribution is extremely skewed.
+
+| Rank | Category | Ideas | Share |
+|---:|---|---:|---:|
+| 1 | DevTools | 702 | 30% |
+| 2 | Productivity | 461 | 20% |
+| 3 | Creator Tools | 196 | 8% |
+| 4 | AI/ML | 178 | 8% |
+| 5 | Education | 136 | 6% |
+| 6 | Fintech | 128 | 6% |
+| 7 | Other | 128 | 6% |
+| 8 | Health | 100 | 4% |
+| 9 | Marketing | 85 | 4% |
+| 10 | Automation | 76 | 3% |
+| 11 | Ecommerce | 62 | 3% |
+| 12 | HR / Recruiting | 55 | 2% |
+| 13 | Logistics | 9 | <1% |
+| 14 | Real Estate | 6 | <1% |
+
+**Half the catalog is DevTools or Productivity.** That reflects where our scraper lives as much as it reflects reality — HN and GitHub Trending skew hard toward technical audiences. If you build for indie hackers, these are the two categories with the deepest pool of already-validated ideas and the most comp data per idea.
+
+The bottom of the list is arguably more interesting than the top. [Logistics](/ideas?category=logistics) has 9 ideas. [Real Estate](/ideas?category=real-estate) has 6. These verticals have real money and very few indie-hacker entrants because the discovery channels are off-Twitter. If you have domain expertise in either, the competitive density is an order of magnitude lower than AI/ML.
+
+## Revenue distribution
+
+We parse the Claude-generated revenue range (e.g. \`"$2k-$10k/mo"\`) into a generated Postgres column that stores the upper bound in USD. The distribution:
+
+| Revenue ceiling | Ideas | Share |
+|---|---:|---:|
+| $50k+/mo | 52 | 2.2% |
+| $25k-50k/mo | 44 | 1.9% |
+| $10k-25k/mo | 626 | 27% |
+| $2k-10k/mo | 1,243 | 54% |
+| <$2k/mo | 131 | 6% |
+| Unknown / unparseable | 226 | 10% |
+
+**54% of the catalog is $2k-$10k/mo territory.** That's the indie-hacker sweet spot: revenue high enough to meaningfully augment a salary or replace one, low enough that incumbents haven't fortified the niche. Filter to just this tier: [$2k+/mo ideas](/ideas?sort=revenue&revenue=2k).
+
+The $10k-$25k/mo band (27%, 626 ideas) is where most "this is a business" territory sits — enough revenue to hire, enough comp to attract a second founder. If you're scoping toward a full-time quit, filter [$10k+/mo](/ideas?sort=revenue&revenue=10k).
+
+The $50k+/mo ceiling is rare (2.2%) and usually reflects ideas with B2B enterprise angles that are hard to bootstrap solo. [Browse them](/ideas?sort=revenue&revenue=50k) — even if you don't build one, they're useful as a reference for what "non-indie-hacker" SaaS looks like.
+
+## Difficulty distribution
+
+Claude Haiku assigns each idea a difficulty 1-5 based on technical complexity and go-to-market difficulty. Mostly middle-of-the-range:
+
+| Difficulty | Ideas |
+|---:|---:|
+| 1 (weekend) | 160 |
+| 2 (easy) | 883 |
+| 3 (medium) | 830 |
+| 4 (hard) | 413 |
+| 5 (very hard) | 36 |
+
+**75% of the catalog is difficulty 2 or 3** — buildable-in-a-month territory for a working solo dev. Only 1.5% of ideas rate as "very hard," and those almost exclusively involve building infrastructure (custom databases, specialized compilers, hardware) rather than applications.
+
+The **160 difficulty-1 ideas** are the most actionable subset for anyone looking to ship *something* this weekend. [Filter to weekend builds](/ideas?difficulty=easy) to see them.
+
+## The ten most-mentioned ideas this cycle
+
+"Mention count" is our proxy for demand signal. Each time the pipeline sees a post matching an existing idea (measured by pg_trgm similarity), the counter increments. The 10 highest right now, in rough order:
+
+1. **[Pilot Flight Logbook Visualizer](/ideas/pilot-flight-logbook-visualizer-mnp2enci)** — 47 mentions. Small market, clear pain. Revenue: $300-1.5k/mo.
+2. **AI Codebase-to-Tutorial Generator** — 32 mentions. Education category. Turns a repo into a learning path.
+3. **Novel Typing Practice** — 31 mentions. Education, $300-1.5k/mo.
+4. **GitHub Issue Receipt Printer** — 30 mentions. DevTools, novelty-ish, surprisingly $50-300/mo.
+5. **Developer-Focused AI Search Engine** — 29 mentions. $5k-20k/mo ceiling.
+6. **Budget Bloomberg Terminal Alternative** — 28 mentions. Fintech, $5k-20k/mo.
+7. **Deal-With-It Emoji Generator** — 28 mentions. Creator tools, $100-500/mo.
+8. **Nugget — SaaS Idea Search Engine** — 18 mentions. (Yes, a SaaS idea search engine appeared in our SaaS idea search engine. It's all recursion, no problems.)
+9. **Competitor Price Monitoring for Ecommerce** — 17 mentions. $2k-10k/mo.
+10. **Blogosphere — Personal Blog Aggregator** — 16 mentions. Creator tools.
+
+Two patterns jump out. First, the top of the list is surprisingly niche — "pilot logbooks" and "novel typing practice" have nowhere near the audience of "analytics" or "CRM" but rank higher than generic tools because **specificity beats scale** in the data. People post about niche pains in detailed terms; generic pains get one-line complaints nobody scrapes. Second, several ideas at the top have modest revenue ceilings ($300-1.5k/mo). For a hobbyist or side-project builder, that's the signal — meaningful cash, manageable competition, real audience.
+
+## Patterns worth naming
+
+Six trends that keep surfacing across the extracted data:
+
+- **"Open-source alternative to X"** is the single most consistent idea shape. Every popular SaaS eventually accumulates a self-hosted competitor in our catalog, usually within 18 months.
+- **Subscription managers / cancellation helpers** keep re-appearing independently. The wall between "I want to cancel" and "I actually cancelled" is a market nobody has closed.
+- **Niche B2B SaaS** (invoice reminders for tradespeople, equipment tracking for small manufacturers, scheduling for service businesses) is the most revenue-dense category per mention. Low mention counts (3-5), high revenue estimates ($5k-25k/mo). If you're hunting for undiscussed opportunities, these are it.
+- **AI developer tools** dominate sheer volume but have the most competition. Half the category is AI code review / AI testing / AI documentation variants.
+- **Shared budgeting for couples** has surfaced 5+ times from different directions. Specific enough to be real, general enough to scale.
+- **Durable goods review platforms** ("Rotten Tomatoes for appliances that last") is the most-mentioned consumer idea the internet keeps asking for but nobody ships.
+
+## Limitations of the data
+
+Being honest about what this is and isn't:
+
+- **Mention counts are weak-signal.** A popular HN thread can drive 5 mentions in a week. The raw number isn't the same as "5 independent founders want this" — it might be one founder's post discussed 5 times. We mitigate by scoring mentions decay over time, so Week-1 hype fades by Week-4.
+- **Revenue estimates come from an LLM.** Haiku reads the source post plus context and picks a range. We've spot-checked hundreds against actual MRR data from public "$X MRR" threads and it's in the right order of magnitude ~80% of the time. Use it to rank, not to price.
+- **Our source mix is biased.** HN + GitHub + PH + Trends skews technical. Reddit and Indie Hackers are temporarily offline (upstream changes in the last two weeks; both coming back post-launch). The moment they're back, expect the Productivity / Creator Tools / HR / Fintech percentages to rise.
+- **English only.** Our extraction prompt assumes English discussion, which excludes a lot of specialized ecosystems.
+
+## What to do with this
+
+If you came here looking for your next project, the highest-signal starting points are:
+
+- **[Fresh ideas this week](/ideas?sort=fresh)** — last 7 days, ranked by popularity. Good for seeing what just surfaced.
+- **[$10k+/mo opportunities](/ideas?sort=revenue&revenue=10k)** — if you're optimizing for revenue ceiling.
+- **[Weekend builds](/ideas?difficulty=easy)** — 160 difficulty-1 ideas. Ship something by Sunday.
+- **[Low-competition verticals](/ideas?category=logistics)** — Logistics (9), Real Estate (6), HR (55). Lowest density, most unaddressed.
+
+Every idea in the catalog comes with a category, difficulty, revenue tier, a one-paragraph commentary, and a free-to-use detail page that tells you why it's interesting and what's risky. No signup required to browse; [⭐ save](/saved) the ones you want to come back to.
+
+**[Browse all ideas →](/ideas)** | **[Trending this week →](/ideas?sort=fresh)** | **[Highest revenue →](/ideas?sort=revenue&revenue=10k)**`,
+  },
 ]
 
 export function getBlogPost(slug: string): BlogPost | undefined {
