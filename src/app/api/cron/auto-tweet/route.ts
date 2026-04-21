@@ -49,13 +49,28 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const today = new Date().toISOString().slice(0, 10)  // YYYY-MM-DD, UTC
+
+  // --- Silenced dates ---
+  // Days where the auto-tweet stays quiet regardless of the window
+  // gate below. Initially used for the 2026-04-23 Product Hunt launch
+  // so the automated post doesn't compete with the manually-authored
+  // launch thread. Safe to leave empty once past launch week.
+  const SILENCED_DATES: readonly string[] = ["2026-04-23"]
+  if (SILENCED_DATES.includes(today)) {
+    return NextResponse.json({
+      skipped: true,
+      reason: "silenced_date",
+      date: today,
+    })
+  }
+
   // --- De-bot the timing: only post during "today's" window ---
   // Three cron windows are registered in vercel.json. We hash the
   // UTC date and modulo-3 to pick one window per day. The other two
   // windows return { skipped: true } in well under 100ms so they cost
   // next-to-nothing on the Vercel invocation budget.
   const windows = [13, 18, 23] as const  // UTC hours of the three cron windows
-  const today = new Date().toISOString().slice(0, 10)  // YYYY-MM-DD
   const hashHex = crypto.createHash("sha256").update(today).digest("hex")
   const pick = parseInt(hashHex.slice(0, 8), 16) % windows.length
   const chosenHour = windows[pick]
