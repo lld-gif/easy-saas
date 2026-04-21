@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/recalc-scores",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/health-alert",
+      "schedule": "17 */6 * * *"
     }
   ]
 }

@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation"
 import { isAdmin } from "@/lib/admin"
-import { getAdminStats, getScrapeRuns, getTopTrendingThisWeek, getEstimatedCosts } from "@/lib/admin-queries"
+import { getAdminStats, getScrapeRuns, getTopTrendingThisWeek, getEstimatedCosts, getPlatformHealth } from "@/lib/admin-queries"
 import { StatCard } from "@/components/admin/StatCard"
 import { BarChart } from "@/components/admin/BarChart"
 import { DailyChart } from "@/components/admin/DailyChart"
 import { PipelineTable } from "@/components/admin/PipelineTable"
+import { PlatformHealth } from "@/components/admin/PlatformHealth"
 import { QualityCards } from "@/components/admin/QualityCards"
 import { CostTracker } from "@/components/admin/CostTracker"
 import { AdminShell } from "@/components/admin/AdminShell"
@@ -17,11 +18,12 @@ export default async function AdminPage() {
   const admin = await isAdmin()
   if (!admin) redirect("/admin/login")
 
-  const [stats, scrapeRuns, trending, costs] = await Promise.all([
+  const [stats, scrapeRuns, trending, costs, platformHealth] = await Promise.all([
     getAdminStats(),
     getScrapeRuns(20),
     getTopTrendingThisWeek(10),
     getEstimatedCosts(),
+    getPlatformHealth(),
   ])
 
   return (
@@ -66,6 +68,12 @@ export default async function AdminPage() {
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Run Scrape</h3>
           <ScrapeButton />
         </div>
+
+        {/* Pipeline Health — per-platform 7d snapshot with health state.
+            Placed above the raw Pipeline run-list so silent failures
+            surface at a glance before the operator scrolls through
+            row-level detail. */}
+        <PlatformHealth rows={platformHealth} />
 
         {/* Pipeline + Trending */}
         <div className="grid gap-4 md:grid-cols-3">

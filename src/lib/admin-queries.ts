@@ -116,6 +116,60 @@ export async function getScrapeRuns(limit = 20): Promise<ScrapeRun[]> {
   return (data || []) as ScrapeRun[]
 }
 
+/**
+ * Per-platform pipeline health row. Shape matches the columns of
+ * `get_platform_health()` RPC (migration 018). Computed against the
+ * last 7 days of scrape_runs + 30 days for the consecutive-failure
+ * streak.
+ *
+ * health_state values:
+ *   - healthy    — recent successful runs, <3 consecutive failures
+ *   - degraded   — 3+ consecutive failures but ran in the last 24h
+ *   - stale      — last run was 24-48h ago (missed at least one cron cycle)
+ *   - broken     — last run was >48h ago (multiple missed cycles)
+ *   - unknown    — no runs in the last 30 days (never ran or purged)
+ */
+export interface PlatformHealth {
+  source_platform: string
+  total_runs_7d: number
+  successful_runs_7d: number
+  failed_runs_7d: number
+  zero_post_runs_7d: number
+  total_posts_7d: number
+  total_new_ideas_7d: number
+  total_ideas_errors_7d: number
+  avg_duration_ms: number | null
+  last_run_at: string | null
+  last_status: string | null
+  last_error_message: string | null
+  last_posts_fetched: number | null
+  minutes_since_last_run: number | null
+  consecutive_failures: number
+  health_state: "healthy" | "degraded" | "stale" | "broken" | "unknown"
+}
+
+/**
+ * Fetch the per-platform pipeline health snapshot. Calls the
+ * `get_platform_health()` SQL function so RLS isn't involved (the
+ * function is SECURITY DEFINER + only reachable via service role).
+ *
+ * The view ordering already floats broken/stale/degraded to the top,
+ * so the admin UI can render the returned rows in order without
+ * additional sorting.
+ */
+export async function getPlatformHealth(): Promise<PlatformHealth[]> {
+  const supabase = getServiceClient()
+
+  const { data, error } = await supabase.rpc("get_platform_health")
+
+  if (error) {
+    console.error("Failed to fetch platform health:", error)
+    return []
+  }
+
+  return (data || []) as PlatformHealth[]
+}
+
 export async function getTopTrendingThisWeek(limit = 10) {
   const supabase = getServiceClient()
   const weekAgo = new Date()
