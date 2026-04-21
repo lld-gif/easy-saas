@@ -15,6 +15,8 @@ import {
   getAggregateStats,
 } from "@/lib/queries"
 import { getCategoryBySlug } from "@/lib/categories"
+import { isIdeaSavedByCurrentUser } from "@/lib/saves"
+import { SaveStar } from "@/components/SaveStar"
 import {
   signalToPercentile,
   signalToColor,
@@ -106,6 +108,12 @@ export default async function IdeaDetailPage({ params }: Props) {
   if (!idea) {
     notFound()
   }
+
+  // Separate roundtrip — depends on `idea.id` which we only know after
+  // the first batch resolves. The lookup itself is tiny (single-row
+  // index hit on user_saves) so the extra hop is cheaper than
+  // restructuring into a two-phase fetch.
+  const isSaved = await isIdeaSavedByCurrentUser(idea.id)
 
   // Cosmetic-only bar position for the Popularity SignalBar. The scarcity
   // signal is carried entirely by the `<PopularBadge>` pill at the top —
@@ -234,7 +242,10 @@ export default async function IdeaDetailPage({ params }: Props) {
 
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold">{idea.title}</h1>
-        <MentionBadge count={idea.mention_count} />
+        <div className="flex items-center gap-3 shrink-0">
+          <MentionBadge count={idea.mention_count} />
+          <SaveStar ideaId={idea.id} initialSaved={isSaved} variant="detail" />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 mb-8">

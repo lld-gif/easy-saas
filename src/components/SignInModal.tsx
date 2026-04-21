@@ -7,9 +7,39 @@ import { createClient } from "@/lib/supabase/client"
 interface SignInModalProps {
   open: boolean
   onClose: () => void
+  /**
+   * If provided, the sign-in callback will auto-save this idea_id for
+   * the newly-authenticated user before redirecting back. Used by
+   * SaveStar so an unauthenticated click round-trips to a saved state
+   * on the original page. Leave undefined for the generic
+   * "Sign in" Navbar click path.
+   */
+  redirectSave?: string
 }
 
-export function SignInModal({ open, onClose }: SignInModalProps) {
+export function SignInModal({ open, onClose, redirectSave }: SignInModalProps) {
+  /**
+   * Build the Supabase Auth redirectTo URL. Preserves the current
+   * path in `next` so the user lands where they were, and forwards
+   * `save` if SaveStar asked for an auto-save. Runs only in the
+   * browser (window.location) so the usual "is this SSR?" guard
+   * isn't needed — this is a client component.
+   */
+  function buildRedirectUrl(): string {
+    const params = new URLSearchParams()
+    if (typeof window !== "undefined") {
+      const nextPath = window.location.pathname + window.location.search
+      if (nextPath && nextPath !== "/auth/callback") {
+        params.set("next", nextPath)
+      }
+    }
+    if (redirectSave) {
+      params.set("save", redirectSave)
+    }
+    const qs = params.toString()
+    return `${window.location.origin}/auth/callback${qs ? `?${qs}` : ""}`
+  }
+
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +70,7 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: buildRedirectUrl(),
         queryParams: { prompt: "select_account" },
       },
     })
@@ -54,7 +84,7 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: buildRedirectUrl(),
       },
     })
     setLoading(false)

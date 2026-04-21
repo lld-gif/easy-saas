@@ -4,18 +4,36 @@ import { IdeaIcon } from "@/components/IdeaIcon"
 import { MentionBadge } from "@/components/MentionBadge"
 import { DifficultyBadge } from "@/components/DifficultyBadge"
 import { PopularBadge } from "@/components/PopularBadge"
+import { SaveStar } from "@/components/SaveStar"
 import type { Idea } from "@/types"
 
 interface IdeaCardProps {
   idea: Idea
   /** Server-computed p99 popularity_score threshold. Card renders PopularBadge iff idea.popularity_score >= this. */
   popThreshold?: number
+  /**
+   * Whether the currently-signed-in user has saved this idea. Comes
+   * from a page-level prefetch (`getUserSavedIdeaIds`) so the star
+   * renders its final state on first paint — no unsaved-to-saved
+   * flicker after a client-side auth check.
+   */
+  savedIds?: Set<string>
 }
 
-export function IdeaCard({ idea, popThreshold }: IdeaCardProps) {
+export function IdeaCard({ idea, popThreshold, savedIds }: IdeaCardProps) {
   return (
-    <Link href={`/ideas/${idea.slug}`}>
-      <Card className="h-full hover:shadow-lg hover:border-input border-border bg-card transition-all duration-200 cursor-pointer">
+    <Card className="relative h-full hover:shadow-lg hover:border-input border-border bg-card transition-all duration-200 cursor-pointer">
+      {/* SaveStar pinned top-right, absolutely positioned so it sits
+          OUTSIDE the <Link>'s clickable area visually but still
+          inside the card bounds. Its onClick preventDefaults so a
+          click fires the save instead of navigating to the idea
+          detail. */}
+      <SaveStar
+        ideaId={idea.id}
+        initialSaved={savedIds?.has(idea.id) ?? false}
+        variant="card"
+      />
+      <Link href={`/ideas/${idea.slug}`} className="block">
         <CardHeader className="pb-3">
           <div className="flex items-start gap-3">
             <IdeaIcon category={idea.category} size="lg" />
@@ -55,7 +73,7 @@ export function IdeaCard({ idea, popThreshold }: IdeaCardProps) {
             </div>
           </div>
         </CardContent>
-      </Card>
-    </Link>
+      </Link>
+    </Card>
   )
 }

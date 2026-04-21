@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { IdeaListRow } from "@/components/IdeaListRow"
 import { getAggregateStats } from "@/lib/queries"
+import { getUserSavedIdeaIds } from "@/lib/saves"
 import type { Idea } from "@/types"
 
 type Props = {
@@ -84,7 +85,11 @@ export default async function DifficultyPage({ params }: Props) {
   query = config.filterFn(query)
   query = query.order("popularity_score", { ascending: false }).limit(20)
 
-  const [{ data, error }, stats] = await Promise.all([query, getAggregateStats()])
+  const [{ data, error }, stats, savedIds] = await Promise.all([
+    query,
+    getAggregateStats(),
+    getUserSavedIdeaIds(),
+  ])
 
   if (error) {
     console.error("Failed to fetch difficulty ideas:", error)
@@ -117,6 +122,7 @@ export default async function DifficultyPage({ params }: Props) {
               idea={idea}
               rank={index + 1}
               popThreshold={stats.popularity_threshold}
+              savedIds={savedIds}
             />
           ))}
         </div>
