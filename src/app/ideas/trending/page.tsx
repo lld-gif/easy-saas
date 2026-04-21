@@ -3,6 +3,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { IdeaListRow } from "@/components/IdeaListRow"
 import { getAggregateStats } from "@/lib/queries"
+import { getUserSavedIdeaIds } from "@/lib/saves"
 import type { Idea } from "@/types"
 
 export const metadata: Metadata = {
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 export default async function TrendingPage() {
   const supabase = await createClient()
 
-  const [{ data, error }, stats] = await Promise.all([
+  const [{ data, error }, stats, savedIds] = await Promise.all([
     supabase
       .from("ideas")
       .select("*")
@@ -25,6 +26,7 @@ export default async function TrendingPage() {
       .order("popularity_score", { ascending: false })
       .limit(20),
     getAggregateStats(),
+    getUserSavedIdeaIds(),
   ])
 
   if (error) {
@@ -59,6 +61,7 @@ export default async function TrendingPage() {
               idea={idea}
               rank={index + 1}
               popThreshold={stats.popularity_threshold}
+              savedIds={savedIds}
             />
           ))}
         </div>

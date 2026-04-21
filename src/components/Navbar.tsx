@@ -21,10 +21,16 @@ export function Navbar() {
             <span><span className="text-orange-500">Vibe</span><span className="text-foreground">Code Ideas</span></span>
           </Link>
 
-          {/* Desktop nav */}
+          {/* Desktop nav. "Saved" is always visible; the /saved page
+              route-gates and shows a sign-in prompt for signed-out users,
+              so there's no value in client-checking auth just to hide it
+              and introducing a flicker. */}
           <div className="hidden md:flex items-center gap-4">
             <Link href="/ideas" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Browse Ideas
+            </Link>
+            <Link href="/saved" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Saved
             </Link>
             <Link href="/blog" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Blog
@@ -66,6 +72,13 @@ export function Navbar() {
               className="block px-3 py-2.5 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
               Browse Ideas
+            </Link>
+            <Link
+              href="/saved"
+              onClick={() => setMenuOpen(false)}
+              className="block px-3 py-2.5 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              Saved
             </Link>
             <Link
               href="/blog"

@@ -12,9 +12,15 @@ interface IdeaGridProps {
   hasCategory?: boolean
   /** Server-computed p99 popularity_score threshold — scalar, not the full sorted array. */
   popularityThreshold?: number
+  /**
+   * Set of idea IDs the current user has already saved. Threaded down
+   * to SaveStar via IdeaCard / IdeaListRow so the star renders its
+   * final state on first paint. Empty set = signed out OR no saves.
+   */
+  savedIds?: Set<string>
 }
 
-export function IdeaGrid({ ideas, view, hasFilters, hasCategory, popularityThreshold }: IdeaGridProps) {
+export function IdeaGrid({ ideas, view, hasFilters, hasCategory, popularityThreshold, savedIds }: IdeaGridProps) {
   if (ideas.length === 0) {
     if (hasFilters) {
       return (
@@ -54,6 +60,7 @@ export function IdeaGrid({ ideas, view, hasFilters, hasCategory, popularityThres
             idea={idea}
             rank={index + 1}
             popThreshold={popularityThreshold}
+            savedIds={savedIds}
           />
         ))}
       </div>
@@ -67,6 +74,7 @@ export function IdeaGrid({ ideas, view, hasFilters, hasCategory, popularityThres
           key={idea.id}
           idea={idea}
           popThreshold={popularityThreshold}
+          savedIds={savedIds}
         />
       ))}
     </div>

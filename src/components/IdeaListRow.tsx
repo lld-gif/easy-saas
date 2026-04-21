@@ -3,6 +3,7 @@ import { IdeaIcon } from "@/components/IdeaIcon"
 import { MentionBadge } from "@/components/MentionBadge"
 import { DifficultyBadge } from "@/components/DifficultyBadge"
 import { PopularBadge } from "@/components/PopularBadge"
+import { SaveStar } from "@/components/SaveStar"
 import type { Idea } from "@/types"
 
 interface IdeaListRowProps {
@@ -10,14 +11,20 @@ interface IdeaListRowProps {
   rank: number
   /** Server-computed p99 popularity_score threshold. Row renders PopularBadge iff idea.popularity_score >= this. */
   popThreshold?: number
+  /** See IdeaCard — same prefetch pattern. */
+  savedIds?: Set<string>
 }
 
-export function IdeaListRow({ idea, rank, popThreshold }: IdeaListRowProps) {
+export function IdeaListRow({ idea, rank, popThreshold, savedIds }: IdeaListRowProps) {
+  // Wrapping element is now a <div>, not <Link>, so the SaveStar click
+  // path doesn't fight with navigation. The title + body become the
+  // navigable surface via an inner <Link> that fills the remaining
+  // space; the rest of the row (icon, rank, badges) mirrors the same
+  // hover visual via group-hover classes without being clickable-to-navigate.
+  const isSaved = savedIds?.has(idea.id) ?? false
+
   return (
-    <Link
-      href={`/ideas/${idea.slug}`}
-      className="group flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-4 sm:py-5 border-b border-border/50 transition-colors hover:bg-muted/30"
-    >
+    <div className="group flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-4 sm:py-5 border-b border-border/50 transition-colors hover:bg-muted/30 relative">
       {/* Rank */}
       <span className="text-base sm:text-lg font-bold text-muted-foreground/50 w-6 sm:w-8 text-right shrink-0 tabular-nums">
         {rank}
@@ -26,8 +33,9 @@ export function IdeaListRow({ idea, rank, popThreshold }: IdeaListRowProps) {
       {/* Icon */}
       <IdeaIcon category={idea.category} size="md" />
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
+      {/* Content — the <Link> wraps just the title + summary + meta
+          row so the SaveStar to the right doesn't trigger navigation. */}
+      <Link href={`/ideas/${idea.slug}`} className="flex-1 min-w-0">
         <h3 className="font-semibold text-foreground group-hover:text-orange-500 transition-colors">
           {idea.title}
         </h3>
@@ -44,13 +52,14 @@ export function IdeaListRow({ idea, rank, popThreshold }: IdeaListRowProps) {
           </div>
           <PopularBadge score={idea.popularity_score} threshold={popThreshold} />
         </div>
-      </div>
+      </Link>
 
       {/* Badges */}
       <div className="flex items-center gap-2 shrink-0">
         <DifficultyBadge difficulty={idea.difficulty} />
         <MentionBadge count={idea.mention_count} />
+        <SaveStar ideaId={idea.id} initialSaved={isSaved} variant="row" />
       </div>
-    </Link>
+    </div>
   )
 }
