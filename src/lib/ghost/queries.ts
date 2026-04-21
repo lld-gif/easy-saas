@@ -16,7 +16,17 @@
 import type { QueryResultRow } from "pg"
 import { GHOST_ENABLED, getGhostPool } from "./client"
 import { createClient } from "@/lib/supabase/server"
+import { embedOne, ideaEmbeddingText } from "@/lib/voyage"
 import type { Idea } from "@/types"
+
+/**
+ * Weight for vector similarity vs BM25 in the hybrid score.
+ * 0.5 = equal weight. Tilted slightly toward semantic (0.55) because
+ * the whole reason for adding embeddings is to catch non-literal matches
+ * that BM25 misses. Tune with real data post-launch if needed.
+ */
+const HYBRID_VECTOR_WEIGHT = 0.55
+const HYBRID_BM25_WEIGHT = 1 - HYBRID_VECTOR_WEIGHT
 
 export interface RelatedIdea {
   id: string
@@ -79,12 +89,98 @@ async function getRelatedFromGhost(
   //
   // Stop words (for, the, a, an, etc.) are stripped by Postgres's
   // english text search config automatically.
-  //
-  // When embeddings are available, this path will combine BM25
-  // (keyword relevance) with vector similarity (semantic meaning)
-  // in a weighted hybrid score.
   const queryText = idea.title
 
+  // Also embed the idea's title + summary for a vector-space search.
+  // Non-fatal if Voyage is unreachable — falls through to BM25-only.
+  const queryEmbedding = await embedOne(ideaEmbeddingText(idea), "query")
+  const vecLiteral = queryEmbedding ? `[${queryEmbedding.join(",")}]` : null
+
+  // Hybrid query. When we have a query embedding, run both BM25 and
+  // vector-cosine, normalize each into [0,1], and blend with the
+  // configured weights. When the embedding is unavailable (Voyage
+  // down, key missing), fall back to pure BM25 — same shape as the
+  // pre-embedding path.
+  if (vecLiteral) {
+    const result = await pool.query(
+      `WITH query AS (
+         SELECT
+           to_tsquery('english',
+             array_to_string(
+               array(
+                 SELECT lexeme FROM unnest(to_tsvector('english', $1)) AS t(lexeme, positions)
+               ), ' | '
+             )
+           ) AS q,
+           $4::vector AS qvec
+       ),
+       bm25 AS (
+         SELECT i.id,
+                ts_rank(i.search_vector, query.q) AS raw_score
+         FROM ideas_search i, query
+         WHERE i.search_vector @@ query.q
+           AND i.id != $2
+         ORDER BY raw_score DESC
+         LIMIT 50
+       ),
+       vec AS (
+         -- pgvector cosine distance (<=>): 0 = identical, 2 = opposite.
+         -- Convert to similarity = 1 - distance, normalized to [0,1]
+         -- (cosine distance on unit vectors is already in [0,2]).
+         SELECT i.id,
+                1 - (i.embedding <=> query.qvec) / 2.0 AS raw_score
+         FROM ideas_search i, query
+         WHERE i.embedding IS NOT NULL
+           AND i.id != $2
+         ORDER BY i.embedding <=> query.qvec ASC
+         LIMIT 50
+       ),
+       -- Normalize each source's top score to [0,1] so blending is
+       -- stable regardless of absolute ts_rank magnitudes.
+       bm25_max AS (SELECT COALESCE(MAX(raw_score), 0) AS m FROM bm25),
+       vec_max  AS (SELECT COALESCE(MAX(raw_score), 0) AS m FROM vec),
+       combined AS (
+         SELECT i.id,
+                COALESCE(
+                  (SELECT raw_score / NULLIF((SELECT m FROM bm25_max), 0) FROM bm25 WHERE bm25.id = i.id),
+                  0
+                ) AS bm25_norm,
+                COALESCE(
+                  (SELECT raw_score / NULLIF((SELECT m FROM vec_max), 0) FROM vec WHERE vec.id = i.id),
+                  0
+                ) AS vec_norm
+         FROM ideas_search i
+         WHERE i.id IN (SELECT id FROM bm25 UNION SELECT id FROM vec)
+       )
+       SELECT
+         i.id, i.slug, i.title, i.summary, i.category,
+         i.mention_count, i.revenue_upper_usd,
+         (combined.bm25_norm * $5 + combined.vec_norm * $6) AS similarity
+       FROM combined
+       JOIN ideas_search i ON i.id = combined.id
+       ORDER BY similarity DESC
+       LIMIT $3`,
+      [queryText, idea.id, limit, vecLiteral, HYBRID_BM25_WEIGHT, HYBRID_VECTOR_WEIGHT]
+    )
+
+    return {
+      ideas: result.rows.map((row: QueryResultRow) => ({
+        id: row.id as string,
+        slug: (row.slug as string) ?? "",
+        title: row.title as string,
+        summary: row.summary as string,
+        category: row.category as string,
+        mention_count: (row.mention_count as number) ?? 0,
+        popularity_score: 0,
+        revenue_potential: "",
+        revenue_upper_usd: (row.revenue_upper_usd as number | null) ?? null,
+        similarity: row.similarity as number,
+      })),
+      source: "ghost",
+    }
+  }
+
+  // Fallback: BM25-only (same as pre-embedding behavior).
   const result = await pool.query(
     `WITH query AS (
        SELECT to_tsquery('english',
