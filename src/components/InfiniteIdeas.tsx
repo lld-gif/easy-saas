@@ -16,6 +16,18 @@ interface InfiniteIdeasProps {
   hasCategory?: boolean
   /** Server-computed p99 popularity_score threshold — scalar, not the full sorted array. */
   popularityThreshold?: number
+  /**
+   * Array of idea IDs the current user has saved. Passed as an array
+   * (not a Set) so it serializes cleanly across the server → client
+   * boundary; we rebuild the Set inside.
+   *
+   * Known limitation: cursor-loaded ideas (page 2+) use the initial
+   * server prefetch, so if the user had a save on an idea that only
+   * appears on page 2, the star will render unsaved until the next
+   * full page reload. Acceptable for launch; a follow-up could
+   * refetch saved IDs after cursor loads.
+   */
+  initialSavedIds?: string[]
 }
 
 const PAGE_SIZE = 24
@@ -27,7 +39,11 @@ export function InfiniteIdeas({
   hasFilters,
   hasCategory,
   popularityThreshold,
+  initialSavedIds,
 }: InfiniteIdeasProps) {
+  // Cheap to rebuild on every render — O(n) where n is the user's
+  // saved count (capped in practice at whatever they've actually saved).
+  const savedIds = new Set(initialSavedIds ?? [])
   const [ideas, setIdeas] = useState<Idea[]>(initialIdeas)
   const [cursor, setCursor] = useState<string | null>(initialCursor)
   const [loading, setLoading] = useState(false)
@@ -193,6 +209,7 @@ export function InfiniteIdeas({
               idea={idea}
               rank={index + 1}
               popThreshold={popularityThreshold}
+              savedIds={savedIds}
             />
           ))}
         </div>
@@ -203,6 +220,7 @@ export function InfiniteIdeas({
               key={idea.id}
               idea={idea}
               popThreshold={popularityThreshold}
+              savedIds={savedIds}
             />
           ))}
         </div>

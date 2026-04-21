@@ -6,6 +6,7 @@ import { ViewToggle } from "@/components/ViewToggle"
 import { InfiniteIdeas } from "@/components/InfiniteIdeas"
 import { TrendingSidebar } from "@/components/TrendingSidebar"
 import { getIdeas, getTrendingIdeas, getAggregateStats } from "@/lib/queries"
+import { getUserSavedIdeaIds } from "@/lib/saves"
 import { parseSearchParams } from "@/lib/utils"
 
 export const metadata: Metadata = {
@@ -27,10 +28,11 @@ interface Props {
 export default async function IdeasPage({ searchParams }: Props) {
   const params = await searchParams
   const filters = parseSearchParams(params)
-  const [{ ideas, nextCursor }, trending, stats] = await Promise.all([
+  const [{ ideas, nextCursor }, trending, stats, savedIds] = await Promise.all([
     getIdeas(filters),
     getTrendingIdeas(10),
     getAggregateStats(),
+    getUserSavedIdeaIds(),
   ])
 
   return (
@@ -62,6 +64,7 @@ export default async function IdeasPage({ searchParams }: Props) {
               hasFilters={!!(filters.q || filters.popularity || filters.time)}
               hasCategory={!!filters.category}
               popularityThreshold={stats.popularity_threshold}
+              initialSavedIds={Array.from(savedIds)}
             />
           </Suspense>
         </div>
