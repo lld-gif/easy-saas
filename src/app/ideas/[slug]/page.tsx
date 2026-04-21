@@ -263,8 +263,20 @@ export default async function IdeaDetailPage({ params }: Props) {
         ))}
       </div>
 
-      <div className="prose prose-invert max-w-none mb-6">
-        <p className="text-lg leading-relaxed text-foreground/80">{idea.summary}</p>
+      {/* Summary — matches the bordered-callout treatment used by the
+          commentary and signals blocks below so the page reads as a
+          stack of consistent sections instead of one loose paragraph
+          floating above a row of cards. Kept at the larger font size
+          since the summary is still the primary at-a-glance description. */}
+      <div className="rounded-lg border border-border bg-card/60 p-4 sm:p-5 mb-6">
+        <div className="mb-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Summary
+          </span>
+        </div>
+        <p className="text-base sm:text-lg leading-relaxed text-foreground/80">
+          {idea.summary}
+        </p>
       </div>
 
       {/* "Why this is interesting" commentary — LLM-generated analysis
