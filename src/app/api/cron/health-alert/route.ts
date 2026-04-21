@@ -7,7 +7,9 @@ export const dynamic = "force-dynamic"
 /**
  * GET /api/cron/health-alert
  *
- * Called by Vercel Cron every 6 hours. Inspects the per-platform
+ * Called by Vercel Cron once per day (07:17 Pacific / 14:17 UTC).
+ * Vercel Hobby caps cron schedules at one invocation per day; upgrading
+ * to Pro would unlock the original 6h cadence. Inspects the per-platform
  * pipeline health view and fires a single email digest if any
  * platform is in `degraded`, `stale`, or `broken` state.
  *
@@ -24,7 +26,7 @@ export const dynamic = "force-dynamic"
  * - No-ops when RESEND_API_KEY is unset. Same treatment.
  * - Digests one email per cron tick even with multiple bad platforms.
  *   Does NOT deduplicate across ticks — if the same platform is
- *   broken for a week, the operator gets an email every 6h for a
+ *   broken for a week, the operator gets one email per day for a
  *   week. Acceptable because (a) the problem IS serious and (b) we
  *   don't have persistent alert state yet. A future improvement
  *   could track "last notified at" per platform to throttle.

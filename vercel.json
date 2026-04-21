@@ -14,7 +14,7 @@
     },
     {
       "path": "/api/cron/health-alert",
-      "schedule": "17 */6 * * *"
+      "schedule": "17 14 * * *"
     }
   ]
 }
