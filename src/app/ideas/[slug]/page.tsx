@@ -263,18 +263,16 @@ export default async function IdeaDetailPage({ params }: Props) {
         ))}
       </div>
 
-      {/* Summary — matches the bordered-callout treatment used by the
-          commentary and signals blocks below so the page reads as a
-          stack of consistent sections instead of one loose paragraph
-          floating above a row of cards. Kept at the larger font size
-          since the summary is still the primary at-a-glance description. */}
+      {/* Idea — bordered callout matching the "Why this is interesting"
+          treatment below. Same padding, same label size, same body
+          font size so the two sections read as a balanced pair. */}
       <div className="rounded-lg border border-border bg-card/60 p-4 sm:p-5 mb-6">
         <div className="mb-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Summary
+            Idea
           </span>
         </div>
-        <p className="text-base sm:text-lg leading-relaxed text-foreground/80">
+        <p className="text-sm sm:text-base leading-relaxed text-foreground/90">
           {idea.summary}
         </p>
       </div>
