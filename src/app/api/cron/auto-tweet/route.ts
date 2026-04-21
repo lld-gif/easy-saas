@@ -18,8 +18,18 @@ interface IdeaRow {
 /**
  * GET /api/cron/auto-tweet
  *
- * Called daily by Vercel Cron. Picks the top trending idea that hasn't
- * been tweeted yet, composes a tweet, and posts it to X/Twitter.
+ * Posts one tweet per day, but at varied wall-clock times so the
+ * @vibecodeideas_ timeline doesn't scream "bot." The schedule is
+ * implemented as three daily Vercel crons (13:23, 18:47, 23:11 UTC)
+ * that each invoke this route; a deterministic hash of today's date
+ * picks exactly one window, and the other two no-op cheaply.
+ *
+ * The result:
+ *   - one post per day (no double-tweets, no misses)
+ *   - the hour varies across a ~10h window day-to-day
+ *   - Vercel Cron adds its own ±0-37min jitter on top of each window
+ *   - no server-side timers or sleeps — each invocation decides in
+ *     O(1) whether it's today's window
  *
  * Protected by CRON_SECRET in the Authorization header.
  */
@@ -37,6 +47,27 @@ export async function GET(request: Request) {
 
   if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  // --- De-bot the timing: only post during "today's" window ---
+  // Three cron windows are registered in vercel.json. We hash the
+  // UTC date and modulo-3 to pick one window per day. The other two
+  // windows return { skipped: true } in well under 100ms so they cost
+  // next-to-nothing on the Vercel invocation budget.
+  const windows = [13, 18, 23] as const  // UTC hours of the three cron windows
+  const today = new Date().toISOString().slice(0, 10)  // YYYY-MM-DD
+  const hashHex = crypto.createHash("sha256").update(today).digest("hex")
+  const pick = parseInt(hashHex.slice(0, 8), 16) % windows.length
+  const chosenHour = windows[pick]
+  const nowHour = new Date().getUTCHours()
+  if (nowHour !== chosenHour) {
+    return NextResponse.json({
+      skipped: true,
+      reason: "not_todays_window",
+      now_utc_hour: nowHour,
+      chosen_utc_hour: chosenHour,
+      date: today,
+    })
   }
 
   // --- Supabase client (service role for server-side access) ---
