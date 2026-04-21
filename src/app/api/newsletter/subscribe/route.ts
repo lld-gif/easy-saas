@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { rateLimit, rateLimitResponse, callerIp } from "@/lib/rate-limit"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +12,15 @@ function isValidEmail(email: string): boolean {
 }
 
 export async function POST(request: Request) {
+  // Per-IP: 5 subscribe attempts / 10 min. Blocks the "enumerate a
+  // million emails" pattern without inconveniencing a real user who
+  // mistyped once. Unauthed endpoint so we can't key on user_id.
+  const rl = rateLimit(`newsletter:${callerIp(request)}`, {
+    max: 5,
+    windowMs: 10 * 60_000,
+  })
+  if (!rl.ok) return rateLimitResponse(rl)
+
   try {
     const body = await request.json()
     const { email } = body

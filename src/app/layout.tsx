@@ -1,10 +1,12 @@
 import type { Metadata } from "next"
 import Script from "next/script"
+import { Suspense } from "react"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
+import { AnalyticsFlagEmitter } from "@/components/AnalyticsFlagEmitter"
 import "./globals.css"
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
@@ -61,6 +63,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         <Analytics />
         <SpeedInsights />
+        <Suspense fallback={null}>
+          <AnalyticsFlagEmitter />
+        </Suspense>
         {GA_MEASUREMENT_ID && (
           <>
             <Script

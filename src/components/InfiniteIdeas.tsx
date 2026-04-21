@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
+import { track } from "@vercel/analytics/react"
 import { IdeaCard } from "@/components/IdeaCard"
 import { IdeaListRow } from "@/components/IdeaListRow"
 import { EmptyState } from "@/components/EmptyState"
@@ -55,6 +56,22 @@ export function InfiniteIdeas({
     setIdeas(initialIdeas)
     setCursor(initialCursor)
   }, [initialIdeas, initialCursor])
+
+  // Zero-results funnel: emit a Vercel Analytics event whenever the
+  // server returned an empty page FOR A REAL SEARCH QUERY (`q` is set).
+  // Filter-only empties (e.g. no ideas matching a sort + category combo)
+  // are less signal-y for content curation, so we skip those. Tracking
+  // the actual query lets us prioritize which topics to scrape more
+  // aggressively next.
+  useEffect(() => {
+    const q = searchParams.get("q")
+    if (q && initialIdeas.length === 0) {
+      track("search_zero_results", { query: q.slice(0, 80) })
+    }
+    // Intentionally key on initialIdeas identity + q. Cursor-loaded
+    // follow-on pages don't re-fire this effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialIdeas, searchParams])
 
   const fetchMore = useCallback(async () => {
     if (!cursor || loading) return

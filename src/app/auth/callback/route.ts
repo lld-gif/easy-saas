@@ -51,5 +51,11 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}${next}`)
+  // Append ?authed=1 to the redirect target so the client can fire an
+  // `auth_complete` Vercel Analytics event on arrival (no server-side
+  // Vercel Analytics setup needed). The `<AnalyticsFlagEmitter>` mounted
+  // at the layout strips the param from the URL after emitting.
+  const redirectUrl = new URL(next.startsWith("/") ? `${origin}${next}` : next)
+  redirectUrl.searchParams.set("authed", "1")
+  return NextResponse.redirect(redirectUrl.toString())
 }

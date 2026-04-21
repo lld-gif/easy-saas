@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit"
 
 /**
  * DELETE /api/saves/{ideaId} — remove the signed-in user's save for
@@ -26,6 +27,11 @@ export async function DELETE(
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  // Share the same bucket as POST /api/saves so a toggle-spammer can't
+  // evade by alternating save/unsave.
+  const rl = rateLimit(`save:${user.id}`, { max: 30, windowMs: 60_000 })
+  if (!rl.ok) return rateLimitResponse(rl)
 
   const { error } = await supabase
     .from("user_saves")

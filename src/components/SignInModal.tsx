@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
+import { track } from "@vercel/analytics/react"
 import { createClient } from "@/lib/supabase/client"
 
 interface SignInModalProps {
@@ -66,6 +67,12 @@ export function SignInModal({ open, onClose, redirectSave }: SignInModalProps) {
   }, [open])
 
   async function handleGoogle() {
+    // Funnel checkpoint: provider_start (Google). Pair this with the
+    // auth/callback success event to compute OAuth completion rate.
+    track("auth_provider_start", {
+      provider: "google",
+      from_save: redirectSave ? true : false,
+    })
     const supabase = createClient()
     await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -90,8 +97,13 @@ export function SignInModal({ open, onClose, redirectSave }: SignInModalProps) {
     setLoading(false)
     if (authError) {
       setError(authError.message)
+      track("auth_provider_error", { provider: "magic_link" })
     } else {
       setSent(true)
+      track("auth_provider_start", {
+        provider: "magic_link",
+        from_save: redirectSave ? true : false,
+      })
     }
   }
 

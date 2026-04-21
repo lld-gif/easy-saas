@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit"
 
 /**
  * POST /api/saves — create a save for the currently-signed-in user.
@@ -23,6 +24,12 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  // 30 save-toggles per minute per user is ~2x faster than a human
+  // could realistically click. Anything above that is a bot or a
+  // runaway client loop.
+  const rl = rateLimit(`save:${user.id}`, { max: 30, windowMs: 60_000 })
+  if (!rl.ok) return rateLimitResponse(rl)
 
   let body: { idea_id?: string }
   try {

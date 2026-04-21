@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { track } from "@vercel/analytics/react"
 import { createClient } from "@/lib/supabase/client"
 import { SignInModal } from "@/components/SignInModal"
 
@@ -63,9 +64,17 @@ export function SaveStar({ ideaId, initialSaved, variant = "card" }: SaveStarPro
     const supabase = createClient()
     const { data } = await supabase.auth.getUser()
     if (!data.user) {
+      // Funnel checkpoint: an anonymous user intended to save. This is
+      // the primary trigger for the OAuth/magic-link flow — tracking it
+      // gives the click-to-signup conversion rate a denominator.
+      track("save_click_anon", { variant })
       setModalOpen(true)
       return
     }
+
+    // Signed-in save click. Separate event so the anon → signup
+    // conversion funnel stays cleanly measurable.
+    track("save_click_authed", { variant, action: saved ? "unsave" : "save" })
 
     // Optimistic toggle — flip UI first, then call the API. If the
     // call fails we flip back and show a minimal error via alert()
