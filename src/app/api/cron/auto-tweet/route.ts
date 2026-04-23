@@ -53,10 +53,11 @@ export async function GET(request: Request) {
 
   // --- Silenced dates ---
   // Days where the auto-tweet stays quiet regardless of the window
-  // gate below. Initially used for the 2026-04-23 Product Hunt launch
-  // so the automated post doesn't compete with the manually-authored
-  // launch thread. Safe to leave empty once past launch week.
-  const SILENCED_DATES: readonly string[] = ["2026-04-23"]
+  // gate below. Initially used for the 2026-04-30 Product Hunt launch
+  // (pushed from 2026-04-23) so the automated post doesn't compete
+  // with the manually-authored launch thread. Safe to leave empty
+  // once past launch week.
+  const SILENCED_DATES: readonly string[] = ["2026-04-30"]
   if (SILENCED_DATES.includes(today)) {
     return NextResponse.json({
       skipped: true,

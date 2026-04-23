@@ -371,7 +371,7 @@ Vibe Code Ideas is a free directory of 2,319 SaaS and micro-SaaS product ideas, 
 | Pre-launch | GSC | Submit sitemap + request indexing on 7 key pages | ⬜ |
 | Pre-launch | GA4 | Property wired to Vercel env (`NEXT_PUBLIC_GA_MEASUREMENT_ID`) | ⬜ |
 | Pre-launch | Vercel Analytics dashboard | Verify custom events emitting: `save_click_anon`, `save_click_authed`, `auth_provider_start`, `auth_complete`, `search_zero_results` | ⬜ |
-| Day 1 (launch, Wed 2026-04-23) | Product Hunt | PH listing (tagline + description + maker comment) | ⬜ |
+| Day 1 (launch, Thu 2026-04-30) | Product Hunt | PH listing (tagline + description + maker comment) | ⬜ |
 | Day 1 | Hacker News | Show HN post | ⬜ |
 | Day 1 | X/Twitter | Launch thread | ⬜ |
 | Day 1 | LinkedIn | Launch post | ⬜ |
