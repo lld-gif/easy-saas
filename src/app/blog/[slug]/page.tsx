@@ -2,18 +2,41 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getBlogPost, getAllBlogPosts } from "@/lib/blog-posts"
+import { getAutoBlogPost } from "@/lib/auto-blog"
 
 interface Props {
   params: Promise<{ slug: string }>
 }
 
+// Auto-blog posts are dynamic (DB-backed) — only static posts get
+// pre-rendered at build time. Pages NOT in this list are server-rendered
+// on demand and cached per Next's data layer.
 export async function generateStaticParams() {
   return getAllBlogPosts().map((post) => ({ slug: post.slug }))
 }
 
+// ISR window for the dynamic-rendered DB posts. Hourly is plenty —
+// auto-blog only writes once per week.
+export const revalidate = 3600
+
+interface UnifiedPost {
+  slug: string
+  title: string
+  description: string
+  content: string
+  publishedAt: string
+}
+
+async function findPost(slug: string): Promise<UnifiedPost | null> {
+  const staticPost = getBlogPost(slug)
+  if (staticPost) return staticPost
+  const autoPost = await getAutoBlogPost(slug)
+  return autoPost
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const post = getBlogPost(slug)
+  const post = await findPost(slug)
   if (!post) return {}
 
   return {
@@ -36,7 +59,7 @@ function estimateReadingTime(content: string): number {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params
-  const post = getBlogPost(slug)
+  const post = await findPost(slug)
   if (!post) notFound()
 
   const readingTime = estimateReadingTime(post.content)

@@ -1,14 +1,35 @@
 import type { MetadataRoute } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { CATEGORIES } from "@/lib/categories"
+import { getAllBlogPosts } from "@/lib/blog-posts"
+import { getAutoBlogPosts } from "@/lib/auto-blog"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient()
 
-  const { data: ideas } = await supabase
-    .from("ideas")
-    .select("slug, updated_at")
-    .order("popularity_score", { ascending: false })
+  const [{ data: ideas }, autoPosts] = await Promise.all([
+    supabase
+      .from("ideas")
+      .select("slug, updated_at")
+      .order("popularity_score", { ascending: false }),
+    getAutoBlogPosts(),
+  ])
+
+  const staticBlogPosts = getAllBlogPosts()
+  const blogEntries: MetadataRoute.Sitemap = [
+    ...staticBlogPosts.map((p) => ({
+      url: `https://vibecodeideas.ai/blog/${p.slug}`,
+      lastModified: new Date(p.publishedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
+    ...autoPosts.map((p) => ({
+      url: `https://vibecodeideas.ai/blog/${p.slug}`,
+      lastModified: new Date(p.publishedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
+  ]
 
   const ideaEntries: MetadataRoute.Sitemap = (ideas ?? []).map((idea) => ({
     url: `https://vibecodeideas.ai/ideas/${idea.slug}`,
@@ -77,6 +98,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    {
+      url: "https://vibecodeideas.ai/blog",
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    ...blogEntries,
     ...categoryEntries,
     ...difficultyEntries,
     ...ideaEntries,
