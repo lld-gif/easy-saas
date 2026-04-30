@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import Anthropic from "@anthropic-ai/sdk"
 import { createClient } from "@supabase/supabase-js"
 
@@ -251,6 +252,20 @@ Return only the post (title + DESCRIPTION line + blank line + body). No preface,
       { error: "DB insert failed", detail: insertErr.message },
       { status: 500 }
     )
+  }
+
+  // On-demand ISR revalidation — without this, /blog and /sitemap.xml
+  // would keep serving their pre-insert cached render until the natural
+  // 1h ISR window expired. New posts deserve to appear immediately so
+  // GSC + IndexNow + RSS pollers pick them up on the next crawl.
+  // revalidate* is a no-op in dev/local but ships fine on Vercel.
+  try {
+    revalidatePath("/blog")
+    revalidatePath("/sitemap.xml")
+    revalidatePath("/blog/rss")
+    revalidatePath("/ideas/rss")
+  } catch (e) {
+    console.warn("revalidate failed (non-fatal):", e)
   }
 
   return NextResponse.json({
