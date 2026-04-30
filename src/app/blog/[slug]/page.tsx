@@ -239,9 +239,52 @@ export default async function BlogPostPage({ params }: Props) {
   )
 }
 
+/**
+ * Inline markdown → HTML for blocks rendered via dangerouslySetInnerHTML.
+ *
+ * Hardened against stored XSS for two specific paths:
+ *   1. HTML in the input itself — `<script>...</script>` or
+ *      `<img onerror=...>` showing up in LLM-generated auto-blog content.
+ *      We escape `& < > "` BEFORE the regex transforms so any literal
+ *      tags become inert text.
+ *   2. `javascript:` / `data:` URLs in `[label](url)` markdown links —
+ *      we scheme-allowlist to `http(s):`, `mailto:`, and relative paths
+ *      starting with `/` or `#`. Anything else falls back to rendering
+ *      the label as plain text with no anchor.
+ *
+ * This was previously unsafe but only reachable from hand-authored
+ * static posts (a self-XSS-only authoring concern). The `auto-blog`
+ * cron added in 2026-04-30 inserts LLM-derived content built from
+ * scraped HN/GitHub/PH/Trends post text — an external-attacker
+ * controlled path via prompt injection or faithful URL reproduction.
+ * Both fixes also defend the existing static posts going forward.
+ */
 function inlineMarkdown(text: string): string {
-  return text
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+  return escaped
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, (_match, label, href) => {
+      const target = String(href).trim()
+      // Two-step validation:
+      //   (1) Scheme allowlist — reject `javascript:`, `data:`, `vbscript:`,
+      //       and any other scheme that can execute or render arbitrary
+      //       payloads in the rendering origin.
+      //   (2) Forbidden-character rejection — even after the HTML escape
+      //       pass above turned `"<>` into entities, the entities decode
+      //       back to their literal forms inside an attribute value at
+      //       parse time. Real URLs (RFC 3986) never contain `"<>\` or
+      //       whitespace; if any are present (even as entity-encoded
+      //       `&quot;`/`&lt;`/`&gt;`), the input is hostile or malformed.
+      //   Either failure → render the label as plain text with no anchor.
+      const schemeOk = /^(https?:|mailto:|\/|#)/i.test(target)
+      const charsOk = !/(&quot;|&lt;|&gt;|["<>\\]|\s)/.test(target)
+      return schemeOk && charsOk
+        ? `<a href="${target}">${label}</a>`
+        : label
+    })
     .replace(/`(.+?)`/g, '<code class="text-[0.875em] font-mono bg-muted px-1.5 py-0.5 rounded-md text-foreground">$1</code>')
 }

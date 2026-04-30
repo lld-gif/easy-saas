@@ -44,7 +44,7 @@ export async function GET() {
     )
   }
 
-  const updatedAt = ideas?.[0]?.updated_at ?? new Date().toISOString()
+  const updatedAt = toIsoDate(ideas?.[0]?.updated_at ?? new Date().toISOString())
 
   const entries = (ideas ?? [])
     .map((i) => {
@@ -59,16 +59,20 @@ export async function GET() {
         `difficulty ${i.difficulty}/5 · ` +
         `${i.mention_count ?? 0} mentions · ` +
         `revenue ${i.revenue_potential ?? "unknown"}`
+      // The inner text in `meta` and `summary` is the only place a `<`
+      // could appear (idea titles in our pipeline are alphanumeric).
+      // Escape both so the resulting HTML string is plain ASCII before
+      // it goes into the CDATA section.
       const html = `<p><strong>${escapeXml(meta)}</strong></p><p>${escapeXml(summary)}</p>`
       return `  <entry>
     <id>${url}</id>
     <title>${escapeXml(i.title)}</title>
     <link rel="alternate" type="text/html" href="${url}"/>
-    <published>${i.first_seen_at}</published>
-    <updated>${i.updated_at}</updated>
+    <published>${toIsoDate(i.first_seen_at)}</published>
+    <updated>${toIsoDate(i.updated_at)}</updated>
     <category term="${escapeXml(i.category ?? "uncategorized")}"/>
     <summary>${escapeXml(summary)}</summary>
-    <content type="html">${escapeXml(html)}</content>
+    <content type="html"><![CDATA[${cdataSafe(html)}]]></content>
   </entry>`
     })
     .join("\n")
@@ -102,8 +106,7 @@ ${entries}
 
 /**
  * Minimal XML escaper — handles the five characters that break feed
- * readers. We don't need a general HTML escaper because the only HTML
- * we emit lives inside CDATA-equivalent text content.
+ * readers. Used in element-text positions only.
  */
 function escapeXml(s: string): string {
   return s
@@ -112,4 +115,28 @@ function escapeXml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;")
+}
+
+/**
+ * `<content type="html">` should contain raw HTML the reader will
+ * render, not double-escaped entities. We wrap the content in CDATA
+ * so the inner HTML survives intact, and pre-strip the CDATA-end
+ * sequence in case it ever appears in input.
+ */
+function cdataSafe(html: string): string {
+  return html.replace(/]]>/g, "]]&gt;")
+}
+
+/**
+ * Atom requires RFC 3339 datetimes on `<published>` and `<updated>`.
+ * Coerce nulls to a sentinel epoch and naïve YYYY-MM-DD strings to
+ * midnight UTC so a malformed source row can't poison the whole feed.
+ */
+function toIsoDate(d: string | null | undefined): string {
+  if (!d) return "1970-01-01T00:00:00Z"
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return `${d}T00:00:00Z`
+  const parsed = new Date(d)
+  return Number.isNaN(parsed.getTime())
+    ? "1970-01-01T00:00:00Z"
+    : parsed.toISOString()
 }

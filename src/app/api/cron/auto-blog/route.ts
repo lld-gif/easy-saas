@@ -221,7 +221,11 @@ Return only the post (title + DESCRIPTION line + blank line + body). No preface,
   const description = descLine.replace(/^DESCRIPTION:\s*/, "").trim()
   const body = lines.slice(2).join("\n").trim()
 
-  if (description.length > 200 || body.length < 200) {
+  // 600-900 word target ≈ 3,500-5,500 chars depending on word length.
+  // Floor at 1,500 chars so a malformed Sonnet response (e.g. "Sorry,
+  // I can't help with that") fails loudly instead of shipping a stub
+  // post that gets indexed before anyone notices.
+  if (description.length > 200 || body.length < 1500) {
     return NextResponse.json(
       {
         error: "Description or body length out of bounds",
@@ -265,11 +269,14 @@ Return only the post (title + DESCRIPTION line + blank line + body). No preface,
     )
   }
 
-  // On-demand ISR revalidation — without this, /blog and /sitemap.xml
+  // On-demand ISR revalidation — without this, /blog and the feeds
   // would keep serving their pre-insert cached render until the natural
   // 1h ISR window expired. New posts deserve to appear immediately so
   // GSC + IndexNow + RSS pollers pick them up on the next crawl.
-  // revalidate* is a no-op in dev/local but ships fine on Vercel.
+  // Each path matches a route segment under src/app/. Smoke-tested
+  // 2026-04-30: /blog reflected the new post on the very next request
+  // after the early-exit revalidate path fired. revalidate* is a no-op
+  // in dev/local but ships fine on Vercel.
   try {
     revalidatePath("/blog")
     revalidatePath("/sitemap.xml")

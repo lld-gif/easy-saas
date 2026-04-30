@@ -58,7 +58,7 @@ export async function GET() {
     <published>${toIsoDate(p.publishedAt)}</published>
     <updated>${toIsoDate(p.publishedAt)}</updated>
     <summary>${escapeXml(summary)}</summary>
-    <content type="html">${escapeXml(html)}</content>
+    <content type="html"><![CDATA[${cdataSafe(html)}]]></content>
   </entry>`
     })
     .join("\n")
@@ -122,4 +122,15 @@ function escapeXml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;")
+}
+
+/**
+ * Atom `<content type="html">` expects the HTML string itself, not
+ * an XML-escaped version. We wrap in CDATA to preserve markup, but
+ * CDATA is terminated by the literal `]]>` sequence — strip it so
+ * a malicious or accidentally-emitted `]]>` in the HTML doesn't
+ * close the section early and leak markup to the parent XML.
+ */
+function cdataSafe(html: string): string {
+  return html.replace(/]]>/g, "]]&gt;")
 }
