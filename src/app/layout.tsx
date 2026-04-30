@@ -33,6 +33,12 @@ export const metadata: Metadata = {
     "Vibe Code Ideas is a free directory of curated micro-SaaS and SaaS ideas ranked by real demand signals. Browse by category, difficulty, and trending popularity to find your next project to build.",
   alternates: {
     canonical: "/",
+    types: {
+      "application/atom+xml": [
+        { url: "/ideas/rss", title: "Vibe Code Ideas — Fresh ideas (Atom)" },
+        { url: "/blog/rss", title: "Vibe Code Ideas — Blog (Atom)" },
+      ],
+    },
   },
   openGraph: {
     title: "Vibe Code Ideas — Discover Your Next SaaS Idea",

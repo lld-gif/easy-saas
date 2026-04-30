@@ -103,6 +103,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.7,
     },
+    {
+      url: "https://vibecodeideas.ai/ideas/rss",
+      changeFrequency: "daily",
+      priority: 0.5,
+    },
+    {
+      url: "https://vibecodeideas.ai/blog/rss",
+      changeFrequency: "weekly",
+      priority: 0.5,
+    },
     ...blogEntries,
     ...categoryEntries,
     ...difficultyEntries,
