@@ -81,11 +81,22 @@ export async function GET(request: Request) {
     .eq("slug", slug)
     .maybeSingle()
   if (existing) {
+    // Even on a no-op, run revalidation. Cheap (Next path invalidation
+    // is microseconds) and recovers from the case where the previous
+    // insert succeeded but its revalidate call didn't propagate (e.g.
+    // a cold edge cache region or a deploy that landed between the
+    // insert and the page render).
+    try {
+      revalidatePath("/blog")
+      revalidatePath("/sitemap.xml")
+      revalidatePath("/blog/rss")
+    } catch {}
     return NextResponse.json({
       skipped: true,
       reason: "already_exists",
       slug,
       published_at: existing.published_at,
+      revalidated: true,
     })
   }
 
