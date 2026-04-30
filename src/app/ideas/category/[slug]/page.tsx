@@ -6,7 +6,12 @@ import { CATEGORIES, getCategoryBySlug } from "@/lib/categories"
 import { IdeaListRow } from "@/components/IdeaListRow"
 import { getAggregateStats } from "@/lib/queries"
 import { getUserSavedIdeaIds } from "@/lib/saves"
+import { getCategoryContent } from "@/lib/category-content"
 import type { Idea } from "@/types"
+
+// ISR: refresh-category-content cron writes monthly; an hour is plenty
+// of grace for the page to pick up new content without a redeploy.
+export const revalidate = 3600
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -50,12 +55,20 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const category = getCategoryBySlug(slug)
+  const content = await getCategoryContent(slug)
+
+  // Prefer the LLM-generated intro for the meta description (it's
+  // current, keyword-rich, and 100-150 words tied to the actual ideas
+  // in the category) over the hand-edited fallback. Truncate to ~155
+  // chars so SERP snippets don't get cut off.
+  const description =
+    content?.introParagraph?.slice(0, 155).replace(/\s+\S*$/, "…") ??
+    categoryDescriptions[slug] ??
+    `Browse the best ${category.label} SaaS ideas — validated by community mentions and ranked by popularity.`
 
   return {
     title: `Top ${category.label} SaaS Ideas to Build in 2026 | Vibe Code Ideas`,
-    description:
-      categoryDescriptions[slug] ??
-      `Browse the best ${category.label} SaaS ideas — validated by community mentions and ranked by popularity.`,
+    description,
     alternates: {
       canonical: `/ideas/category/${slug}`,
     },
@@ -71,7 +84,7 @@ export default async function CategoryPage({ params }: Props) {
   }
 
   const supabase = await createClient()
-  const [{ data, error }, stats, savedIds] = await Promise.all([
+  const [{ data, error }, stats, savedIds, content] = await Promise.all([
     supabase
       .from("ideas")
       .select("*")
@@ -81,6 +94,7 @@ export default async function CategoryPage({ params }: Props) {
       .limit(20),
     getAggregateStats(),
     getUserSavedIdeaIds(),
+    getCategoryContent(slug),
   ])
 
   if (error) {
@@ -115,10 +129,51 @@ export default async function CategoryPage({ params }: Props) {
         </span>
       </h1>
 
-      <p className="text-muted-foreground mb-8 max-w-2xl leading-relaxed">
-        {categoryDescriptions[slug] ??
+      {/* Intro paragraph: prefer the Sonnet-generated content from
+          category_content (refreshed monthly with current data); fall
+          back to the hand-curated map for first paint before the
+          first cron run populates the DB. */}
+      <p className="text-muted-foreground mb-6 max-w-2xl leading-relaxed">
+        {content?.introParagraph ??
+          categoryDescriptions[slug] ??
           `Browse the best ${category.label} SaaS ideas, ranked by popularity and community mentions.`}
       </p>
+
+      {/* Trending sub-topics — only render when we actually have them.
+          Each sub-topic is a Sonnet-clustered theme inside this
+          category with 2-3 example idea slugs linked through to the
+          detail pages. Drives long-tail SEO for queries like
+          "ai-powered code review saas" within the broader category. */}
+      {content?.trendingSubtopics && content.trendingSubtopics.length > 0 && (
+        <section className="mb-8 rounded-lg border border-border bg-muted/30 p-5 sm:p-6 max-w-2xl">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
+            Trending in {category.label} right now
+          </h2>
+          <ul className="space-y-4">
+            {content.trendingSubtopics.map((sub, i) => (
+              <li key={i}>
+                <h3 className="font-semibold text-foreground">{sub.topic}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed mt-0.5">
+                  {sub.why_interesting}
+                </p>
+                {sub.example_idea_slugs.length > 0 && (
+                  <p className="mt-1.5 text-sm flex flex-wrap gap-x-3 gap-y-1">
+                    {sub.example_idea_slugs.map((s) => (
+                      <Link
+                        key={s}
+                        href={`/ideas/${s}`}
+                        className="text-orange-600 hover:text-orange-500 underline underline-offset-2 decoration-orange-300"
+                      >
+                        {s.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase())}
+                      </Link>
+                    ))}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {ideas.length > 0 ? (
         <div className="divide-y divide-border/50">
