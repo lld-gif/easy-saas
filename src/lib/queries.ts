@@ -115,7 +115,16 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
   // Sort
   switch (sort) {
     case "trending":
-      query = query.order("mention_count", { ascending: false }).order("id", { ascending: false })
+      // Migration 023 split lifetime popularity (mention_count, drives the
+      // Popular badge) from recent momentum (recent_mention_count_7d, drives
+      // this sort). Without the split, ideas seeded on day 1 dominate the
+      // Trending feed forever because mention_count is cumulative-monotonic.
+      // Tie-break by first_seen_at DESC so newer ideas win when activity is
+      // equal — that matches what users expect from a "Trending now" sort.
+      query = query
+        .order("recent_mention_count_7d", { ascending: false })
+        .order("first_seen_at", { ascending: false })
+        .order("id", { ascending: false })
       break
     case "newest":
       query = query.order("first_seen_at", { ascending: false }).order("id", { ascending: false })
@@ -146,17 +155,25 @@ export async function getIdeas(filters: IdeaFilters): Promise<{
   if (filters.cursor) {
     const { data: cursorRow } = await supabase
       .from("ideas")
-      .select("id, mention_count, first_seen_at, last_seen_at, difficulty, popularity_score, revenue_upper_usd")
+      .select("id, mention_count, recent_mention_count_7d, first_seen_at, last_seen_at, difficulty, popularity_score, revenue_upper_usd")
       .eq("id", filters.cursor)
       .single()
 
     if (cursorRow) {
       switch (sort) {
-        case "trending":
+        case "trending": {
+          // 3-key keyset pagination matching the ORDER BY above:
+          // (recent_mention_count_7d DESC, first_seen_at DESC, id DESC).
+          // Three OR branches encode the strict-lex-less-than relation.
+          const r7 = cursorRow.recent_mention_count_7d ?? 0
+          const fs = cursorRow.first_seen_at
           query = query.or(
-            `mention_count.lt.${cursorRow.mention_count},and(mention_count.eq.${cursorRow.mention_count},id.lt.${cursorRow.id})`
+            `recent_mention_count_7d.lt.${r7},` +
+              `and(recent_mention_count_7d.eq.${r7},first_seen_at.lt.${fs}),` +
+              `and(recent_mention_count_7d.eq.${r7},first_seen_at.eq.${fs},id.lt.${cursorRow.id})`
           )
           break
+        }
         case "newest":
           query = query.or(
             `first_seen_at.lt.${cursorRow.first_seen_at},and(first_seen_at.eq.${cursorRow.first_seen_at},id.lt.${cursorRow.id})`
@@ -243,7 +260,9 @@ export async function getTrendingIdeas(limit: number = 12): Promise<Idea[]> {
     .from("ideas")
     .select("*")
     .eq("status", "active")
-    .order("mention_count", { ascending: false })
+    .order("recent_mention_count_7d", { ascending: false })
+    .order("first_seen_at", { ascending: false })
+    .order("id", { ascending: false })
     .limit(limit)
 
   if (error) {

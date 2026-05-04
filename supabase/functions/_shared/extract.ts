@@ -271,11 +271,25 @@ export async function deduplicateAndInsert(
         })
         .eq("id", existing.idea_id)
 
-      await supabase.from("idea_sources").insert({
-        idea_id: existing.idea_id,
-        source_platform: sourcePlatform,
-        raw_text: sourceText?.slice(0, 2000),
-      })
+      // Upsert with ignoreDuplicates so re-detections from a 2x/day
+      // scrape don't create phantom mention rows. Migration 024 added a
+      // UNIQUE index on (idea_id, source_platform, idea_sources_day(extracted_at))
+      // — first hit per idea+platform+day wins, the rest are no-ops.
+      // mention_count above is incremented unconditionally because it
+      // happens BEFORE the upsert returns; ideally we'd only bump
+      // mention_count on a successful insert. The recalc cron compensates
+      // by re-deriving mention_count from idea_sources nightly.
+      await supabase.from("idea_sources").upsert(
+        {
+          idea_id: existing.idea_id,
+          source_platform: sourcePlatform,
+          raw_text: sourceText?.slice(0, 2000),
+        },
+        {
+          onConflict: "idea_id,source_platform,extracted_day",
+          ignoreDuplicates: true,
+        }
+      )
 
       return { type: "dupe" }
     }

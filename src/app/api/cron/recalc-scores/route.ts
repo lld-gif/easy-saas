@@ -31,16 +31,37 @@ export async function GET(request: Request) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   try {
-    const { data, error } = await supabase.rpc("recalculate_all_popularity_scores")
+    // Order matters: refresh the 7d window FIRST so popularity_score's
+    // (small) recency component sees the same source-of-truth window
+    // the Trending sort uses. Both RPCs are SECURITY DEFINER and
+    // service-role only.
+    const recentRes = await supabase.rpc(
+      "recalculate_all_recent_mention_counts"
+    )
+    if (recentRes.error) {
+      console.error(
+        "recalculate_all_recent_mention_counts failed:",
+        recentRes.error
+      )
+      return NextResponse.json(
+        { error: recentRes.error.message, stage: "recent_mentions" },
+        { status: 500 }
+      )
+    }
 
-    if (error) {
-      console.error("Recalculation failed:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    const popRes = await supabase.rpc("recalculate_all_popularity_scores")
+    if (popRes.error) {
+      console.error("recalculate_all_popularity_scores failed:", popRes.error)
+      return NextResponse.json(
+        { error: popRes.error.message, stage: "popularity_score" },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({
       success: true,
-      ideas_updated: data,
+      ideas_updated: popRes.data,
+      recent_mention_rows_updated: recentRes.data,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error"

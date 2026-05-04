@@ -6,6 +6,14 @@ export interface Idea {
   category: string
   tags: string[]
   mention_count: number
+  /**
+   * Count of idea_sources rows for this idea with extracted_at within
+   * the trailing 7 days. Backs the Trending sort. Refreshed nightly by
+   * recalculate_all_recent_mention_counts() in the recalc-scores cron.
+   * Distinct from `mention_count` (lifetime) which drives the Popular
+   * badge. Migration 023.
+   */
+  recent_mention_count_7d: number
   difficulty: number
   popularity_score: number
   market_signal: "strong" | "moderate" | "weak" | "unknown"
