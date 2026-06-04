@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Suspense } from "react"
-import { getRelatedIdeas } from "@/lib/ghost/queries"
+import { searchIdeasByDescription } from "@/lib/check-search"
 import { getCategoryBySlug } from "@/lib/categories"
 
 /**
@@ -30,7 +30,6 @@ import { getCategoryBySlug } from "@/lib/categories"
 
 export const revalidate = 3600
 
-const SENTINEL_ID = "00000000-0000-0000-0000-000000000000"
 const MAX_QUERY_LENGTH = 600
 const RESULTS_LIMIT = 8
 
@@ -125,20 +124,7 @@ export default async function CheckPage({ searchParams }: Props) {
 // ---------------------------------------------------------------------------
 
 async function Results({ query }: { query: string }) {
-  // Wrap the user's text in a synthetic idea so getRelatedIdeas accepts
-  // it. The function uses idea.title for BM25 + ideaEmbeddingText
-  // (title + summary) for the vector embedding. We put the whole query
-  // in title and leave summary empty so a short query (e.g. "subscription
-  // tracker") doesn't get noisy concatenation.
-  const { ideas, source } = await getRelatedIdeas(
-    {
-      id: SENTINEL_ID,
-      title: query,
-      summary: "",
-      category: "",
-    },
-    RESULTS_LIMIT
-  )
+  const ideas = await searchIdeasByDescription(query, RESULTS_LIMIT)
 
   if (ideas.length === 0) {
     return <NoMatches query={query} />
@@ -249,10 +235,8 @@ async function Results({ query }: { query: string }) {
 
       <ShareFooter query={query} verdict={verdict.label} />
 
-      {/* Tiny attribution so we can spot which backend served the results
-          in case of weirdness. Renders as a muted footer. */}
       <p className="text-xs text-muted-foreground/60 text-center mt-8">
-        powered by hybrid BM25 + vector search · {source}
+        powered by Postgres full-text search · {ideas.length}/{RESULTS_LIMIT}
       </p>
     </div>
   )
