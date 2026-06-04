@@ -24,6 +24,12 @@ export function Footer() {
               Methodology
             </Link>
             <Link
+              href="/check"
+              className="hover:text-foreground transition-colors"
+            >
+              Check your idea
+            </Link>
+            <Link
               href="/blog"
               className="hover:text-foreground transition-colors"
             >
