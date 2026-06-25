@@ -1,7 +1,17 @@
+"use client"
+
+import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { NewsletterSignup } from "@/components/NewsletterSignup"
 
 export function Footer() {
+  const pathname = usePathname()
+
+  // Mirrors the Navbar guard — see src/proxy.ts for the archive-pause
+  // rewrite gate. The coming-soon page renders its own NewsletterSignup
+  // inline; we'd render it twice if the Footer stayed mounted.
+  if (pathname === "/coming-soon") return null
+
   return (
     <footer className="border-t border-border bg-background mt-auto">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
