@@ -79,7 +79,37 @@ function classifyUserAgent(ua: string): BotClass {
   return null
 }
 
+/**
+ * 2026-06-25 PAUSE GATE.
+ *
+ * VCI is archived. All real routes get internally rewritten to the
+ * `/coming-soon` landing page so visitors see an intentional pause
+ * instead of a half-alive product (crons are off, /check / Related
+ * Ideas don't work, etc). Bypass for:
+ *   - `/coming-soon` itself (would loop forever)
+ *   - `/api/*` (preserves newsletter signup + auth callback handlers)
+ *   - asset paths handled by the matcher config below
+ *
+ * To unfreeze: delete this block. Existing pages snap back to their
+ * normal routes immediately on next deploy.
+ */
+const PAUSE_GATE_ENABLED = true
+
 export function proxy(request: NextRequest) {
+  if (PAUSE_GATE_ENABLED) {
+    const path = request.nextUrl.pathname
+    const exemptPath =
+      path === "/coming-soon" ||
+      path.startsWith("/api/") ||
+      path.startsWith("/_next/")
+    if (!exemptPath) {
+      const rewriteUrl = request.nextUrl.clone()
+      rewriteUrl.pathname = "/coming-soon"
+      rewriteUrl.search = "" // strip any incoming ?q= etc. so the URL bar reads cleanly
+      return NextResponse.rewrite(rewriteUrl)
+    }
+  }
+
   const ua = request.headers.get("user-agent") ?? ""
   const botClass = classifyUserAgent(ua)
 
