@@ -4,8 +4,8 @@ import { Suspense } from "react"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { Navbar } from "@/components/Navbar"
-import { Footer } from "@/components/Footer"
+// Navbar + Footer intentionally unimported during the 2026-06-25 archive
+// pause — see comment in the body below.
 import { AnalyticsFlagEmitter } from "@/components/AnalyticsFlagEmitter"
 import "./globals.css"
 
@@ -64,9 +64,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body className="min-h-screen flex flex-col bg-background text-foreground">
-        <Navbar />
+        {/* 2026-06-25 archive pause: Navbar + Footer suppressed.
+            src/proxy.ts rewrites every HTML route to /coming-soon, which
+            renders its own brand-only chrome inline. usePathname-based
+            guards in Navbar/Footer don't work here because rewrite
+            (vs redirect) keeps the URL bar at the requested path, so
+            the client never sees /coming-soon. Simpler to remove them
+            from the layout entirely until revival.
+              <Navbar />  <Footer /> */}
         <div className="flex-1">{children}</div>
-        <Footer />
         <Analytics />
         <SpeedInsights />
         <Suspense fallback={null}>

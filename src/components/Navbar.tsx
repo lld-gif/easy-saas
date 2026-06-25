@@ -1,19 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { AuthButton } from "@/components/AuthButton"
 
 export function Navbar() {
-  const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
-
-  // During the 2026-06-25 archive pause every route gets proxy-rewritten
-  // to /coming-soon (see src/proxy.ts). Hide the global nav on that
-  // page — its links would just bounce back to /coming-soon anyway
-  // and the brand-only landing reads cleaner without them.
-  if (pathname === "/coming-soon") return null
 
   return (
     <nav className="border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50">
